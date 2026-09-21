@@ -1,1 +1,498 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkyClarity — Night Sky Visibility for Boulder, CO</title>
+<meta name="description" content="Can night sky visibility quality in Boulder, Colorado be predicted from weather, air quality, light pollution, and astronomical factors?">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep: #0b0f1d;
+    --bg-panel: #131a2e;
+    --bg-panel-2: #1a2340;
+    --text-primary: #eae6da;
+    --text-muted: #9aa3c0;
+    --accent-gold: #e0b155;
+    --accent-teal: #6fb8ae;
+    --line: rgba(234,230,218,0.12);
+    --serif: 'Fraunces', Georgia, serif;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body{
+    margin: 0;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: var(--accent-gold); text-decoration: none; border-bottom: 1px solid rgba(224,177,85,0.35); }
+  a:hover { border-bottom-color: var(--accent-gold); }
+
+  .wrap {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .wide {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ---------- Starfield ---------- */
+  #starfield {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(ellipse at 20% -10%, rgba(224,177,85,0.06), transparent 45%),
+      radial-gradient(ellipse at 80% 0%, rgba(111,184,174,0.05), transparent 40%),
+      var(--bg-deep);
+    overflow: hidden;
+  }
+  .star {
+    position: absolute;
+    background: var(--text-primary);
+    border-radius: 50%;
+    opacity: 0.5;
+    animation: twinkle linear infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.15; }
+    50% { opacity: 0.9; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .star { animation: none; opacity: 0.4; }
+    html { scroll-behavior: auto; }
+  }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    min-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 80px 24px 60px;
+  }
+  .hero .kicker {
+    font-family: var(--sans);
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    color: var(--accent-teal);
+    margin-bottom: 18px;
+  }
+  .hero h1 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(48px, 9vw, 92px);
+    line-height: 1;
+    margin: 0 0 22px;
+    letter-spacing: -0.01em;
+  }
+  .hero p.sub {
+    font-size: 19px;
+    color: var(--text-muted);
+    max-width: 480px;
+    margin: 0 0 40px;
+  }
+  .hero .scroll-hint {
+    font-size: 13px;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .scroll-hint .line {
+    width: 1px;
+    height: 34px;
+    background: linear-gradient(var(--text-muted), transparent);
+  }
+
+  /* ---------- Sections ---------- */
+  section { padding: 90px 0; }
+  section + section { border-top: 1px solid var(--line); }
+
+  .label {
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--accent-gold);
+    margin: 0 0 14px;
+  }
+
+  h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(30px, 4vw, 42px);
+    line-height: 1.15;
+    margin: 0 0 28px;
+    letter-spacing: -0.01em;
+  }
+
+  p { color: var(--text-primary); }
+  section p.lede { font-size: 18px; color: var(--text-muted); max-width: 640px; }
+
+  .pull-quote {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 500;
+    font-size: clamp(24px, 3vw, 32px);
+    line-height: 1.4;
+    color: var(--text-primary);
+    border-left: 2px solid var(--accent-gold);
+    padding: 4px 0 4px 28px;
+    margin: 40px 0 0;
+  }
+
+  /* ---------- Research questions ---------- */
+  .q-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .q-list li {
+    padding: 28px 0;
+    border-top: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 20px;
+    align-items: baseline;
+  }
+  .q-list li:last-child { border-bottom: 1px solid var(--line); }
+  .q-list .q-mark {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 22px;
+    color: var(--accent-teal);
+  }
+  .q-list p { margin: 0; font-size: 18px; }
+
+  /* ---------- Data sources grid ---------- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    margin-top: 40px;
+  }
+  .grid .card {
+    background: var(--bg-panel);
+    padding: 28px 30px;
+  }
+  .grid .card h3 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 19px;
+    margin: 0 0 10px;
+    color: var(--text-primary);
+  }
+  .grid .card p {
+    font-size: 15px;
+    color: var(--text-muted);
+    margin: 0;
+  }
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- Constraints aside ---------- */
+  .aside {
+    margin-top: 48px;
+    padding: 26px 28px;
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+  }
+  .aside p {
+    font-size: 15px;
+    color: var(--text-muted);
+    margin: 0;
+  }
+  .aside p + p { margin-top: 12px; }
+
+  /* ---------- Team ---------- */
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+    margin-top: 44px;
+  }
+  @media (max-width: 800px) {
+    .team-grid { grid-template-columns: 1fr; }
+  }
+  .member { display: flex; flex-direction: column; }
+  .avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--serif);
+    font-size: 22px;
+    color: var(--bg-deep);
+    margin-bottom: 20px;
+  }
+  .avatar.gold { background: linear-gradient(135deg, var(--accent-gold), #f0d190); }
+  .avatar.teal { background: linear-gradient(135deg, var(--accent-teal), #a9d9d0); }
+  .avatar.mix  { background: linear-gradient(135deg, var(--accent-gold), var(--accent-teal)); }
+  .member h3 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 21px;
+    margin: 0 0 4px;
+  }
+  .member .role {
+    font-size: 13px;
+    color: var(--accent-teal);
+    margin: 0 0 14px;
+  }
+  .member p.bio {
+    font-size: 15px;
+    color: var(--text-muted);
+    margin: 0 0 16px;
+    flex-grow: 1;
+  }
+  .member .links {
+    font-size: 14px;
+    display: flex;
+    gap: 16px;
+  }
+  .member .links a { border-bottom-style: dotted; }
+
+  /* ---------- Background / related work ---------- */
+  .citation {
+    padding: 26px 0;
+    border-top: 1px solid var(--line);
+  }
+  .citation:last-child { border-bottom: 1px solid var(--line); }
+  .citation .ref {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 0 0 10px;
+    line-height: 1.6;
+  }
+  .citation .ref em { color: var(--text-primary); }
+  .citation .note {
+    font-size: 15.5px;
+    margin: 0;
+  }
+
+  /* ---------- Footer ---------- */
+  footer {
+    padding: 60px 0 80px;
+    text-align: center;
+  }
+  footer .mark {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 20px;
+    color: var(--accent-gold);
+    margin-bottom: 10px;
+  }
+  footer p {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 0 0 6px;
+  }
+</style>
+</head>
+<body>
+
+<div id="starfield"></div>
+
+<header class="hero">
+  <p class="kicker">Boulder, Colorado</p>
+  <h1>SkyClarity</h1>
+  <p class="sub">Can you see the sky tonight? A project to predict night sky visibility from weather, smoke, moonlight, and light pollution.</p>
+  <div class="scroll-hint">
+    <span>The project</span>
+    <span class="line"></span>
+  </div>
+</header>
+
+<section id="about">
+  <div class="wrap">
+    <p class="label">The problem</p>
+    <h2>Good stargazing conditions depend on more than a clear forecast.</h2>
+    <p class="lede">Stargazing conditions in the Boulder, CO area depend on a combination of factors — light pollution, cloud cover, wildfire smoke, and moon or twilight conditions — that aren't currently combined into a single predictive tool. Stargazers, astro-tourism operators, and astronomy educators are left to piece it together themselves, or just guess.</p>
+    <p class="lede" style="margin-top:20px;">Our goal is to build a model that predicts night sky visibility quality for a given date and time window in Boulder, producing a score or classification that lets people plan ahead rather than relying on guesswork.</p>
+    <p class="pull-quote">Can night sky visibility quality in the Boulder, CO area be predicted from a combination of weather, air quality, light pollution, and astronomical factors on a given night?</p>
+  </div>
+</section>
+
+<section id="questions">
+  <div class="wrap">
+    <p class="label">Research questions</p>
+    <h2>What we're trying to find out</h2>
+    <ul class="q-list">
+      <li>
+        <span class="q-mark">?</span>
+        <p>Given near-term forecast data — cloud cover, air quality forecast, moon phase — how well can next-night sky visibility conditions be estimated in advance?</p>
+      </li>
+      <li>
+        <span class="q-mark">?</span>
+        <p>Which factor most degrades visibility — cloud cover, smoke concentration, or moon illumination — and do these factors interact with each other?</p>
+      </li>
+      <li>
+        <span class="q-mark">?</span>
+        <p>How does night sky visibility differ between wildfire season and the rest of the year?</p>
+      </li>
+      <li>
+        <span class="q-mark">?</span>
+        <p>What does the distribution of night sky visibility conditions in Boulder look like across a multi-year period, in terms of cloud cover, smoke levels, and moon illumination?</p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<section id="data">
+  <div class="wide">
+    <p class="label">Data sources</p>
+    <h2>Five inputs, five very different sciences</h2>
+    <p class="lede">Weather, air quality, light pollution, and orbital mechanics don't normally share a table. This project pulls them onto one.</p>
+    <div class="grid">
+      <div class="card">
+        <h3>NWS API</h3>
+        <p>Real-time cloud cover and short-term forecast conditions from the National Weather Service.</p>
+      </div>
+      <div class="card">
+        <h3>Open-Meteo Historical Weather API</h3>
+        <p>Roughly five years of hourly historical cloud cover and weather data for pattern analysis.</p>
+      </div>
+      <div class="card">
+        <h3>EPA AirNow API</h3>
+        <p>Hourly PM2.5 and AQI readings, used as a proxy for wildfire smoke concentration.</p>
+      </div>
+      <div class="card">
+        <h3>VIIRS / World Atlas of Artificial Sky Brightness</h3>
+        <p>Nighttime lights satellite data providing an annual light pollution baseline for the region.</p>
+      </div>
+      <div class="card">
+        <h3>U.S. Naval Observatory API</h3>
+        <p>Moon phase and astronomical twilight times for each night in the study window.</p>
+      </div>
+    </div>
+
+    <div class="aside">
+      <p><strong style="color:var(--text-primary); font-weight:600;">Major constraints.</strong> No direct ground-truth measure of "dark sky visibility" exists, so a proxy such as sky quality meter readings or citizen reports is needed — which introduces possible bias.</p>
+      <p>Wildfire smoke is seasonal, which could skew the model toward certain times of year. Reliable predictions are likely limited to a roughly 24-hour window, since weather and cloud cover forecasts degrade in accuracy beyond that.</p>
+      <p>There's also no ability to independently record or check data on the ground, which limits confidence in the model's prediction accuracy.</p>
+    </div>
+  </div>
+</section>
+
+<section id="team">
+  <div class="wide">
+    <p class="label">Team</p>
+    <h2>Who's building this</h2>
+    <div class="team-grid">
+
+      <div class="member">
+        <div class="avatar gold">NR</div>
+        <h3>Neha Ramachandra</h3>
+        <p class="role">Coordination and Analysis / Modeling</p>
+        <p class="bio">Senior studying Computer Science with a minor in Data Science, completing the BAM (Bachelor's/Accelerated Master's) program in Data Science at CU Boulder. Currently a Course Assistant for two undergraduate computer science courses.</p>
+        <div class="links">
+          <a href="https://www.linkedin.com/in/n-ramachandra/" target="_blank" rel="noopener">LinkedIn</a>
+          <a href="https://github.com/nehabykadi" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </div>
+
+      <div class="member">
+        <div class="avatar teal">DR</div>
+        <h3>Daralynn Rhode</h3>
+        <p class="role">Data and Visualization</p>
+        <p class="bio">5th-year senior studying Computer Science with a minor in Astronomy, also completing the BAM program in Data Science at CU Boulder. Works as a student developer at LASP on the IMAP mission's data processing pipeline, and leads astronomy tours for AstroTours.</p>
+        <div class="links">
+          <a href="https://www.linkedin.com/in/daralynn-rhode-b33282216" target="_blank" rel="noopener">LinkedIn</a>
+          <a href="https://github.com/daralynnrhode" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </div>
+
+      <div class="member">
+        <div class="avatar mix">SK</div>
+        <h3>Shreyas Kulkarni</h3>
+        <p class="role">Documentation and Reproducibility</p>
+        <p class="bio">1st-year Master's student studying Data Science at the University of Colorado Boulder. Works as a student IT technician at the CU Anschutz Medical Campus Dental School.</p>
+        <div class="links">
+          <a href="https://www.linkedin.com/in/shreyas-kulkarni-39321b216/" target="_blank" rel="noopener">LinkedIn</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section id="background">
+  <div class="wrap">
+    <p class="label">Background and related work</p>
+    <h2>Standing on a few shoulders</h2>
+
+    <div class="citation">
+      <p class="ref">Falchi, F., Cinzano, P., Duriscoe, D., Kyba, C. C. M., Elvidge, C. D., Baugh, K., Portnov, B. A., Rybnikova, N. A., &amp; Furgoni, R. (2016). <em>The new world atlas of artificial night sky brightness.</em> Science Advances, 2(6), e1600377.</p>
+      <p class="note">The scientific foundation behind VIIRS-based light pollution maps — satellite measurements of nighttime radiance from Earth. This paper validates VIIRS radiance as a legitimate proxy for sky brightness, which underpins a large part of the light pollution data used here.</p>
+    </div>
+
+    <div class="citation">
+      <p class="ref">U.S. Environmental Protection Agency. (2001, November). <em>Visibility in mandatory federal Class I areas (1994–1998): A report to Congress</em> (Appendix C: Methodology for calculating light extinction from monitored aerosol mass data).</p>
+      <p class="note">Technical documentation on how the EPA established a "light extinction coefficient" and a normalized haze metric — the method used to quantify how smoke particles degrade sky transparency.</p>
+    </div>
+
+    <div class="citation">
+      <p class="ref">King, B. (2025, June). <em>Wildfires imperil our night skies.</em> Sky &amp; Telescope.</p>
+      <p class="note">A first-person account, rather than a data source, of how wildfire smoke degrades sky transparency for weeks at a time depending on the severity of the fire season.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p class="mark">✦</p>
+    <p>SkyClarity — a CU Boulder Data Science project</p>
+    <p><a href="https://github.com/nehabykadi/SkyClarity" target="_blank" rel="noopener">View the repository on GitHub</a></p>
+  </div>
+</footer>
+
+<script>
+  // Ambient starfield — one orchestrated background effect, respects reduced-motion via CSS.
+  (function () {
+    const field = document.getElementById('starfield');
+    const count = window.innerWidth < 700 ? 70 : 130;
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < count; i++) {
+      const s = document.createElement('span');
+      s.className = 'star';
+      const size = Math.random() * 1.8 + 0.6;
+      s.style.width = size + 'px';
+      s.style.height = size + 'px';
+      s.style.top = Math.random() * 100 + '%';
+      s.style.left = Math.random() * 100 + '%';
+      s.style.animationDuration = (Math.random() * 4 + 3) + 's';
+      s.style.animationDelay = (Math.random() * 5) + 's';
+      frag.appendChild(s);
+    }
+    field.appendChild(frag);
+  })();
+</script>
+
+</body>
+</html>
