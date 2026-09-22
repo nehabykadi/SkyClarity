@@ -325,11 +325,35 @@
 
 <section id="about">
   <div class="wrap">
-    <p class="label">The problem</p>
+    <p class="label">Project Introduction</p>
     <h2>Good stargazing conditions depend on more than a clear forecast.</h2>
     <p class="lede">Stargazing conditions in the Boulder, CO area depend on a combination of factors — light pollution, cloud cover, wildfire smoke, and moon or twilight conditions — that aren't currently combined into a single predictive tool. Stargazers, astro-tourism operators, and astronomy educators are left to piece it together themselves, or just guess.</p>
+      <p class="lede" style="margin-top:20px;">This is a planning problem as much as a data problem. Right now, anyone who wants to know whether tonight is worth the drive up to a dark-sky spot has to manually cross-reference a weather app, an air-quality app, and a light-pollution map, then guess how those pieces interact.</p>
     <p class="lede" style="margin-top:20px;">Our goal is to build a model that predicts night sky visibility quality for a given date and time window in Boulder, producing a score or classification that lets people plan ahead rather than relying on guesswork.</p>
     <p class="pull-quote">Can night sky visibility quality in the Boulder, CO area be predicted from a combination of weather, air quality, light pollution, and astronomical factors on a given night?</p>
+    
+    <p class="label" style="margin-top:48px;">Who this affects</p>
+    <p class="lede">The gap between "clear forecast" and "clear sky" shows up differently depending on who's asking:</p>
+    <ul class="stakeholders">
+      <li><strong>Stargazers and astrophotographers</strong>, deciding whether a trip out of the city is worth it on a given night.</li>
+      <li><strong>Astro-tourism operators</strong> running paid star parties and dark-sky tours, who need advance notice to plan or reschedule.</li>
+      <li><strong>Astronomy educators</strong>, including university programs and planetariums, timing observation sessions around conditions students can actually see something in.</li>
+      <li><strong>Land managers and dark-sky advocates</strong>, who use visibility data to make the case for lighting policy in areas like Boulder County.</li>
+    </ul>
+    
+    <p class="label" style="margin-top:48px;">What exists today</p>
+    <p class="lede">Each piece of this problem is already measured somewhere. The National Weather Service and Open-Meteo provide cloud cover forecasts and historical weather. The EPA's AirNow tracks hourly air quality as a proxy for wildfire smoke. The World Atlas of Artificial Night Sky Brightness maps light pollution from satellite data. The U.S. Naval Observatory publishes moon phase and twilight times. What's missing is anything that combines these into a single, forward-looking answer to the question people actually have: is tonight good for stargazing? That's the gap this project is trying to close.</p>
+
+    <figure class="figure">
+      <img src="https://www.go-astronomy.com/images/darksky/CO-night-sky-brightness-light-pollution-map-bortle.jpg" alt="Bortle scale night sky brightness and light pollution map of Colorado" style="width:100%; height:auto; border:1px solid #4A7C8C;">
+      <figcaption class="caption">Colorado light pollution map (Bortle scale), via <a href="https://www.go-astronomy.com" target="_blank" rel="noopener">Go-Astronomy.com</a>.</figcaption>
+    </figure>
+
+    
+    <p class="label" style="margin-top:48px;">Our plans this semester</p>
+    <figure class="figure">
+      <img src="images/Milestone.png" alt="Milestone Map" style="width:100%; height:auto; border:1px solid #4A7C8C;">
+    </figure>
   </div>
 </section>
 
@@ -439,7 +463,7 @@
 <section id="background">
   <div class="wrap">
     <p class="label">Background and related work</p>
-    <h2>Standing on a few shoulders</h2>
+    <h2>Building From Others</h2>
 
     <div class="citation">
       <p class="ref">Falchi, F., Cinzano, P., Duriscoe, D., Kyba, C. C. M., Elvidge, C. D., Baugh, K., Portnov, B. A., Rybnikova, N. A., &amp; Furgoni, R. (2016). <em>The new world atlas of artificial night sky brightness.</em> Science Advances, 2(6), e1600377.</p>
@@ -461,7 +485,7 @@
 <footer>
   <div class="wrap">
     <p class="mark">✦</p>
-    <p>SkyClarity — a CU Boulder Data Science project</p>
+    <p>SkyClarity — a CU Boulder Data Mining project</p>
     <p><a href="https://github.com/nehabykadi/SkyClarity" target="_blank" rel="noopener">View the repository on GitHub</a></p>
   </div>
 </footer>
