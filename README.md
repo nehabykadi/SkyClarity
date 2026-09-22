@@ -52,20 +52,8 @@ Our goal is to build a model that predicts night sky visibility quality for a gi
 - Reliable predictions are likely limited to a roughly 24-hour window, since weather and cloud cover forecasts degrade in accuracy beyond that.
 - No ability to independently record or check data on the ground, which limits confidence in the model's prediction accuracy.
 
-## Milestone Roadmap CHANGE ME
+## Milestone Roadmap
 
-> Draft schedule — adjust dates/scope to match the actual syllabus milestones.
+![Milestone Map](docs/images/Milestone.png)
 
-| Milestone | Target | Status |
-|---|---|---|
-| Project proposal & data source identification | Complete | ✅ Done |
-| Data collection & ingestion pipeline (5 sources) | TBD | ⬜ Not started |
-| Data cleaning, alignment, and proxy-label construction | TBD | ⬜ Not started |
-| Exploratory data analysis & feature engineering | TBD | ⬜ Not started |
-| Baseline model / predictive scoring approach | TBD | ⬜ Not started |
-| Model evaluation & refinement | TBD | ⬜ Not started |
-| Final report & presentation | TBD | ⬜ Not started |
-
----
-
-*SkyClarity — a CU Boulder Data Science project*
+*SkyClarity — a CU Boulder Data Mining project*
