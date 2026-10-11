@@ -42,7 +42,7 @@ data/
     └── ephemeris/                     JPL DE421 file used for sun and moon positions
 ```
 
-> `raw/` is too large for GitHub. If it is not in the repo, it is in the team's shared folder on Google Drive. You only need `raw/` to trace a value back to its source or to rebuild.
+> `raw/` is too large for GitHub. If it is not in the repo, it is in the team's shared folder on Google Drive: https://drive.google.com/file/d/1NNblHwz1sJzswq5HCODqq2127qxmp_jP/view?usp=sharing. You only need `raw/` to trace a value back to its source or to rebuild.
 
 ## Dataset 1: nightly conditions
 
