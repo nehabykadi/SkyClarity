@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+data/raw/open_meteo/
+data/raw/aqs/
+data/raw/hms/
+data/raw/globe_at_night/
+data/raw/viirs/
+data/raw/ephemeris/
+.venv/
