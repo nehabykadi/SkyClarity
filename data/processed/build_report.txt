@@ -1,0 +1,56 @@
+Build report  2026-10-11T17:55:32+00:00
+
+Dataset 1: 46,768 rows, 16 sites, 2017-12-31 to 2025-12-31
+Missing values per column (%):
+site_id               0.00
+site_name             0.00
+latitude              0.00
+longitude             0.00
+elevation_m           0.00
+night_date            0.00
+n_dark_hours          0.00
+cloud_cover_mean      0.00
+cloud_cover_max       0.00
+cloud_low_mean        0.00
+cloud_mid_mean        0.00
+cloud_high_mean       0.00
+rel_humidity_mean     0.00
+temp_c_mean           0.00
+dew_point_c_mean      0.00
+precip_mm_sum         0.00
+wind_speed_ms_mean    0.00
+wind_gust_ms_max      0.00
+moon_illum_frac       0.00
+moon_up_frac          0.00
+moon_alt_max_deg      0.00
+wind_dir_deg_mean     0.00
+pm25_monitor_id       9.38
+pm25_monitor_km       9.38
+pm25_ugm3             9.38
+pm25_next_day_ugm3    9.38
+hms_smoke_level       0.03
+viirs_radiance        0.03
+
+Dataset 2: 3,579 Globe at Night observations in Colorado bounding box
+  within 25 km of a site: 2,884
+  matched to a dataset-1 site-night: 2,884
+  unmatched (too far, bad timestamp, or outside date range): 695
+  matched with a limiting magnitude: 2,691
+  matched observations per site:
+site_id
+sommers_bausch      803
+boulder_downtown    523
+denver_downtown     481
+flagstaff_mtn       218
+crestone            202
+gross_reservoir     192
+longmont            177
+ncar_mesa           137
+nederland            66
+lyons                28
+golden_gate_sp       28
+rmnp_alpine_vc       10
+brainard_lake        10
+jackson_lake_sp       4
+estes_park            3
+pawnee_buttes         2
