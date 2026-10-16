@@ -36,6 +36,8 @@ Our goal is to build a model that predicts night sky visibility quality for a gi
 3. How does night sky visibility differ between wildfire season and the rest of the year?
 4. What does the distribution of night sky visibility conditions in Boulder look like across a multi-year period, in terms of cloud cover, smoke levels, and moon illumination?
 
+*** It was necessary to replace the research questions because of limited data points in different sites, confounding data in terms of light smoke correlating to better visibility than no smoke, and missing data. The new questions are more representative of Boulder data and only make one connection to night-sky viewing since our data may be unreliable. ***
+
 ## Data Sources
 
 | Source | Provides |
