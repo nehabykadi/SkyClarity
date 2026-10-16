@@ -1,11 +1,5 @@
 SKY CLARITY - DATA CLEANING, QUALITY, BIAS AND ETHICS
 =====================================================
-Covers the cleaning done in processed/dataset_cleanup.ipynb and an assessment
-of the cleaned outputs:
-  processed/dataset1_site_night_cleaned.csv        (46,752 rows x 31 columns)
-  processed/dataset2_gan_observations_cleaned.csv  ( 2,088 rows x 41 columns)
-
-All counts below were taken from the saved cleaned files.
 
 Contents
   1. Cleaning decisions
