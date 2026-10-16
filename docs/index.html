@@ -436,7 +436,7 @@
       <p class="rq">Research questions 1 and 2 · Dataset 1</p>
       <p class="finding">Across all sites, <strong>clear, moonless nights are most common from June to September</strong> (about 14% of site-nights, versus roughly 4–8% in other months). Smoke follows the same calendar: it shows up on about 33% of June nights, 52% of July nights and 60% of August nights. The best season for cloud is also the worst season for smoke.</p>
       <figure class="eda-figure">
-        <img src="images/fig5_seasonality.png" alt="Bar and line chart by month showing percent of clear moonless nights and percent of nights with smoke" loading="lazy">
+        <img src="images/fig5_seasonality.png" alt="Bar and line chart by month showing percent of clear moonless nights and percent of nights with smoke" loading="lazy" width="600" height="400">
         <figcaption>Share of site-nights that are clear (under 20% modelled cloud) and moonless (moon up less than 10% of dark hours), with the share of nights that had any HMS smoke overhead.</figcaption>
       </figure>
     </div>
@@ -446,7 +446,7 @@
       <p class="rq">Research question 3 · Dataset 2</p>
       <p class="finding">Mean limiting magnitude ranges from about <strong>2.5 at Sommers-Bausch</strong> to <strong>6.1 at Crestone</strong>. That site-to-site gap is far larger than any weather effect we see below. The relationship with VIIRS radiance is not clean, though: some low-radiance sites (such as NCAR Mesa) report fairly poor skies, and several Boulder-area sites differ mainly in radiance and elevation.</p>
       <figure class="eda-figure narrow">
-        <img src="images/fig2_radiance_vs_limmag.png" alt="Scatter plot of log VIIRS radiance against mean limiting magnitude for each site" loading="lazy">
+        <img src="images/fig2_radiance_vs_limmag.png" alt="Scatter plot of log VIIRS radiance against mean limiting magnitude for each site" loading="lazy" width="600" height="400">
         <figcaption>Mean limiting magnitude by site against log(1 + VIIRS radiance). Bubble size is the number of reports; sites with fewer than 10 reports are excluded.</figcaption>
       </figure>
     </div>
@@ -456,7 +456,7 @@
       <p class="rq">Research questions 3 and 4 · Dataset 2</p>
       <p class="finding">Modelled cloud cover is only weakly related to limiting magnitude (<strong>r = −0.12</strong>). Part of the reason is that the weather comes from a reanalysis grid, not from the site. Observers who reported a clear sky had a median modelled cloud cover of about 18%, versus about 75% for those reporting over half the sky covered, so the model tracks observers loosely, but the boxes overlap heavily.</p>
       <figure class="eda-figure narrow">
-        <img src="images/fig1_cloud_vs_limmag.png" alt="Scatter plot with regression line of mean cloud cover against limiting magnitude" loading="lazy">
+        <img src="images/fig1_cloud_vs_limmag.png" alt="Scatter plot with regression line of mean cloud cover against limiting magnitude" loading="lazy" width="600" height="400">
         <figcaption>Mean modelled cloud cover during dark hours against limiting magnitude, with a linear fit.</figcaption>
       </figure>
     </div>
@@ -466,7 +466,7 @@
       <p class="rq">Research question 3 · Dataset 2</p>
       <p class="finding">Mean limiting magnitude is similar across moon-illumination bins, ranging from about 3.3 to 3.7, and it does not fall as the moon gets brighter. Most reports (1,345) were made when the moon was less than 25% illuminated and mostly down, so the brighter bins are thin. We suspect site differences are hiding the moon effect, and we will test it after accounting for site.</p>
       <figure class="eda-figure narrow">
-        <img src="images/fig3_moon.png" alt="Box plots of limiting magnitude by moon illuminated fraction, split by whether the moon was mostly up or down" loading="lazy">
+        <img src="images/fig3_moon.png" alt="Box plots of limiting magnitude by moon illuminated fraction, split by whether the moon was mostly up or down" loading="lazy" width="600" height="400">
         <figcaption>Limiting magnitude by moon illuminated fraction, split by whether the moon was above the horizon for more than half the dark hours.</figcaption>
       </figure>
     </div>
@@ -476,12 +476,12 @@
       <p class="rq">Research questions 2 and 3 · Dataset 2</p>
       <p class="finding">Counter-intuitively, nights with light smoke have a <em>higher</em> mean limiting magnitude (4.45, n = 78) than smoke-free nights (3.33, n = 1,981). Medium smoke averages 3.83 (n = 24) and heavy smoke 2.60 (n = 5). Only 136 of the 2,884 matched reports fall on a smoke day, so these numbers are fragile.</p>
       <figure class="eda-figure">
-        <img src="images/fig4_smoke_pm25.png" alt="Box plot of limiting magnitude by HMS smoke level next to a scatter plot of PM2.5 against limiting magnitude" loading="lazy">
+        <img src="images/fig4_smoke_pm25.png" alt="Box plot of limiting magnitude by HMS smoke level next to a scatter plot of PM2.5 against limiting magnitude" loading="lazy" width="600" height="400">
         <figcaption>Left: limiting magnitude by HMS smoke level, with report counts. Right: daily PM2.5 against limiting magnitude.</figcaption>
       </figure>
       <p class="finding" style="margin-top:36px;">Subtracting each site’s mean shrinks the light-smoke bump from about +1.1 to about +0.4, so part of it was simply <strong>which sites reported on smoky days</strong>. Some remains. Smoke reports come mostly from Crestone, Denver, Longmont and Sommers-Bausch, and the heavy-smoke group is only 5 reports from Denver and Longmont. Smoke is also a daytime-imagery product, so a plume on the map does not guarantee smoke overhead at night. We will treat smoke as a simple present/absent variable and report the uncertainty.</p>
       <figure class="eda-figure">
-        <img src="images/fig6_smoke_site_adjusted.png" alt="Three panels: raw limiting magnitude by smoke level, site-adjusted deviation by smoke level, and a heatmap of report counts by site and smoke level" loading="lazy">
+        <img src="images/fig6_smoke_site_adjusted.png" alt="Three panels: raw limiting magnitude by smoke level, site-adjusted deviation by smoke level, and a heatmap of report counts by site and smoke level" loading="lazy" width="600" height="400">
         <figcaption>Left: raw limiting magnitude. Middle: deviation from each site’s own mean. Right: number of reports at each site and smoke level.</figcaption>
       </figure>
     </div>
