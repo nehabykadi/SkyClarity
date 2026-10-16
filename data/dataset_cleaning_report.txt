@@ -1,0 +1,277 @@
+SKY CLARITY - DATA CLEANING, QUALITY, BIAS AND ETHICS
+=====================================================
+Covers the cleaning done in processed/dataset_cleanup.ipynb and an assessment
+of the cleaned outputs:
+  processed/dataset1_site_night_cleaned.csv        (46,752 rows x 31 columns)
+  processed/dataset2_gan_observations_cleaned.csv  ( 2,088 rows x 41 columns)
+
+All counts below were taken from the saved cleaned files.
+
+Contents
+  1. Cleaning decisions
+  2. Data quality assessment
+  3. Privacy, licensing and terms of use
+  4. Limitations the team cannot fix
+
+
+=============================================================================
+1. CLEANING DECISIONS
+=============================================================================
+
+1.1 Rows removed (Dataset 2: Globe at Night observations)
+---------------------------------------------------------
+Each step applies after the ones above it.
+
+  Step                                               Removed   Rows left
+  Raw file                                                -       3,579
+  A0  Keep matched reports only                         695       2,884
+  A1  Drop duplicate submissions                        234       2,650
+  A2  Drop rows with no limiting_mag                    170       2,480
+  A3  Drop daytime timestamps (06:00-17:59)             306       2,174
+  A4  Drop limiting_mag == 0                             86       2,088
+
+The final 2,088 rows are 72% of matched reports and 58% of the raw file.
+
+A0  Reports more than 25 km from every site have no conditions attached and
+    cannot be used for modelling.
+A1  234 reports repeat another report's time, location and rating under a
+    different gan_id. They are treated as double submissions. Keeping them
+    would count those nights twice.
+A2  limiting_mag is the outcome variable. It was not imputed, because
+    imputing the outcome would mean inventing the answer.
+A3  Naked-eye star counts cannot be made in daylight, so these times were
+    almost certainly entered wrong. night_date is derived from the time, so
+    these rows may carry the wrong night's weather. The correct time cannot
+    be recovered.
+A4  A rating of 0 most likely means "could not see the constellation". These
+    nights were cloudier than average (58% vs 46% model cloud), so the 0
+    reflects cloud rather than sky brightness.
+
+1.2 Rows removed (Dataset 1: nightly conditions)
+------------------------------------------------
+B1  Dropped 16 rows dated 2017-12-31 (one per site), before the study period.
+    They had no smoke or radiance values, and were the only missing values in
+    those columns.
+
+No other Dataset 1 rows were removed. Dataset 1 is a complete grid of every
+site on every night (16 sites x 2,922 nights), so dropping rows would leave
+gaps in the calendar.
+
+1.3 Missing values
+------------------
+B2  PM2.5 was NOT imputed. Pawnee Buttes is missing 100% (no monitor within
+    75 km) and Crestone 49%. At that rate imputed values would mostly be
+    invented.
+B3  PM2.5 was set to blank where the nearest monitor is more than 50 km away
+    (RMNP ~59 km, Jackson Lake ~52 km), because a monitor that far away does
+    not represent the site. Monitor ID and distance were kept so the change
+    can be traced. 5,601 Dataset 1 rows and 25 Dataset 2 rows were affected.
+B4  Added pm25_missing (0/1) and left the value blank, so analyses can
+    account for missing PM2.5 without a guessed value.
+    Flagged: 9,970 Dataset 1 rows (21.3%), 138 Dataset 2 rows (6.6%).
+B6  sqm_reading values outside 14-23 mag/arcsec^2 were set to blank. Values
+    of 1-11 look like limiting magnitudes typed into the wrong field; 56 and
+    1012 are typos. 327 readings remain (15.7% of cleaned reports).
+B8  Missing constellation (9 rows) filled with "unknown".
+
+1.4 Outliers and range fixes
+----------------------------
+C3  Negative PM2.5 clipped to 0 (instrument noise). All 9 negative values
+    came from the distant monitors already blanked in B3, so this step
+    changed nothing in the end. It is kept as a safeguard.
+    Weather extremes and high PM2.5 (up to 98 ug/m3 during wildfire smoke)
+    were NOT trimmed. No impossible values were found: cloud and humidity
+    never exceed 100%, and dew point never exceeds temperature. The extremes
+    are real events and part of the signal.
+    viirs_radiance = 0 at four remote sites (brainard_lake, golden_gate_sp,
+    pawnee_buttes, rmnp_alpine_vc) means below the satellite's detection
+    limit, not missing, and is kept as 0.
+
+1.5 Transforms and columns
+--------------------------
+D1  Added log1p versions of precip_mm_sum, pm25_ugm3 and viirs_radiance as
+    new columns (log_*). These variables are heavily right-skewed. The
+    originals are kept.
+D4  Dropped pm25_next_day_ugm3. It is exactly pm25_ugm3 shifted forward one
+    day (identical on 100% of rows) and adds no new information.
+
+1.6 Considered but not applied
+------------------------------
+- Restricting to observer cloud "clear" / "1/4 of sky" (would leave 1,614
+  rows). Kept as a possible sensitivity check.
+- Setting obs_elevation_m = 0 to blank. 27 placeholder zeros remain; use the
+  site's elevation_m instead.
+- Gross Reservoir 2024-2025 radiance flag and viirs_version column. These
+  were planned but are not in the saved files. See section 6.
+
+
+=============================================================================
+2. DATA QUALITY ASSESSMENT
+=============================================================================
+
+2.1 Completeness
+----------------
+Dataset 1: complete except PM2.5 (21.3% missing after B3, all flagged). Every
+site has every night from 2018-01-01 to 2025-12-31.
+
+Dataset 2: complete for limiting_mag, conditions, time and location. The
+remaining gaps are:
+  sqm_reading   84% missing  (secondary outcome, small subset only)
+  pm25_ugm3     6.6% missing (flagged)
+  27 placeholder zeros in obs_elevation_m
+
+2.2 Consistency
+---------------
+- Primary key site_id + night_date is unique in Dataset 1. gan_id is unique
+  in Dataset 2.
+- Every Dataset 2 row joins to exactly one Dataset 1 site-night.
+- Two independent sources agree: mean PM2.5 rises with satellite smoke level
+  (5.9, 8.0, 15.3 and 22.6 ug/m3 for none, light, medium, heavy smoke).
+- Inconsistency found: VIIRS radiance switches product version in 2022
+  (V2.1 to V2.2). Boulder and Longmont peak that year, so part of the rise
+  may be a product change rather than real change.
+- Inconsistency found: observers who marked "over 1/2 of sky" cloudy report
+  a higher average limiting_mag than those who marked "1/2 of sky", which
+  shows observer cloud judgements are noisy.
+
+2.3 Validity
+------------
+- All weather values are within physical limits.
+- Invalid values found and fixed: daytime timestamps, zero ratings,
+  impossible meter readings, negative PM2.5.
+- Validity that cannot be checked: limiting_mag is a self-reported
+  judgement. A rating of 4 from one observer may not equal a 4 from another.
+- Weather comes from the Open-Meteo reanalysis grid (a model), not from
+  instruments at each site.
+
+2.4 Representativeness
+----------------------
+The observations are not a random sample of nights or places.
+
+- By site: sommers_bausch, boulder_downtown and denver_downtown hold 59% of
+  cleaned reports. Seven sites have fewer than 30 reports each, and Pawnee
+  Buttes has only 2.
+- By month: reports cluster in February (455), April (373) and December
+  (398). June-September has only 256 reports (12%), which is when smoke
+  peaks.
+- By moon: Globe at Night campaigns are scheduled around moonless windows.
+  Mean moon illumination is 0.24 on report nights vs 0.50 across all nights.
+- By smoke: 5.1% of cleaned reports fall on a smoke day (78 light,
+  24 medium, 5 heavy), vs 18% of all site-nights in Dataset 1.
+- By year: Crestone reports are almost all from 2022-2023, so it covers
+  different years from the other sites.
+- Not independent: four Boulder-area sites (boulder_downtown, sommers_bausch,
+  ncar_mesa, flagstaff_mtn) share the same main PM2.5 monitor (08-013-0003)
+  and nearly the same weather grid. They differ mainly in radiance and
+  elevation.
+
+2.5 Usability for each research question
+----------------------------------------
+RQ1  Estimating next-night visibility from forecasts: LIMITED.
+     The data has historical reanalysis weather, not archived forecasts. A
+     model trained on it learns from "perfect" weather, so its accuracy will
+     overstate what a forecast-driven tool would achieve.
+RQ2  Which factor most degrades visibility: PARTLY USABLE.
+     Light pollution (r = -0.38 with limiting_mag) and cloud cover (r = -0.12)
+     can be estimated. The moon effect will be underestimated because
+     moon-up nights are under-sampled. The smoke effect rests on only 107
+     smoke-day reports.
+RQ3  Wildfire season vs the rest of the year: LIMITED.
+     Only 256 reports fall in June-September. Season and smoke cannot be
+     separated with this sample.
+RQ4  Distribution of conditions across years: FULLY USABLE.
+     Dataset 1 is complete for cloud, smoke and moon on every site-night and
+     does not depend on observer reports.
+
+
+=============================================================================
+3. PRIVACY, LICENSING AND TERMS OF USE
+=============================================================================
+
+3.1 Privacy and sensitive attributes
+------------------------------------
+- No names, emails or demographic attributes are present in either dataset.
+- Dataset 2 contains observer latitude/longitude to 4 decimal places
+  (about 10 m) together with exact date and time. Many reports are made from
+  home, so these coordinates could locate an individual's residence and
+  habits.
+  Action: do not publish raw observer coordinates in the report, figures or
+  website. Round to 2 decimals (~1 km) or drop obs_latitude/obs_longitude
+  from any shared output; site_id and site_km are enough for analysis.
+  The cleaned CSV in the repository still contains the full coordinates;
+  the team should decide whether to round them before the repo is public.
+- gan_id is an anonymous record number, not a personal identifier.
+- The data has no sensitive attributes (race, health, income, etc.), so
+  fairness concerns are about place, not people. Results reflect where
+  observers live (mostly urban Boulder/Denver) and should not be presented
+  as representative of rural or underserved areas.
+
+3.2 Licensing and terms of use
+------------------------------
+  Source                         Terms
+  Globe at Night (NSF NOIRLab)   Free public data; credit Globe at Night
+  Open-Meteo historical weather  CC BY 4.0; attribution required; free tier
+                                 is for non-commercial use
+  EPA AQS PM2.5                  U.S. government data, public domain
+  NOAA HMS smoke                 U.S. government data, public domain
+  VIIRS nighttime lights (EOG)   CC BY 4.0; credit the Earth Observation
+                                 Group, Payne Institute, Colorado School of
+                                 Mines
+  skyfield / JPL DE421           Open source / public
+
+The project is non-commercial coursework, which fits all of the above. The
+report and website must include attribution for Globe at Night, Open-Meteo
+and the Earth Observation Group. The team should check each provider's page
+before submission in case the terms have changed. The raw VIIRS GeoTIFFs
+(~12 GB each) are not redistributed; they stay in the team's shared drive.
+
+
+=============================================================================
+4. LIMITATIONS THE TEAM CANNOT FIX
+=============================================================================
+
+L1  The outcome is a noisy, subjective, whole-number rating.
+    limiting_mag depends on each observer's eyesight, dark adaptation and
+    chart-matching, and is recorded in whole magnitudes. No cleaning step
+    can remove this.
+    How it constrains later work:
+      - Errors below about +/-1 magnitude cannot be told apart from
+        observer noise, so model accuracy should be reported against that
+        floor (e.g. MAE in magnitudes, or accuracy within +/-1).
+      - Because the outcome is ordinal, results should be framed as
+        ordered categories, or the use of regression should be stated
+        clearly.
+      - There is no independent ground truth to validate against, so
+        accuracy means "agreement with citizen reports", not true sky
+        darkness.
+
+L2  Smoke and moonlight are rare in the observations and tangled with season.
+    Observers report mostly in winter and on moonless nights, while smoke
+    peaks in summer. More cleaning cannot add the missing nights.
+    How it constrains later work:
+      - Smoke and moon effects will have wide uncertainty and cannot be
+        claimed as causal. Any smoke finding must be stated as an
+        association that is confounded with season.
+      - Predictions for smoky or moonlit nights are extrapolation and
+        should be flagged as such.
+      - RQ3 (wildfire season vs the rest of the year) can be described with
+        Dataset 1 conditions, but its effect on observed visibility rests
+        on 256 reports.
+
+L3  Observations are clustered and not independent.
+    59% of reports come from three sites, nearby sites share weather and
+    PM2.5, and the same observer may report many nights.
+    How it constrains later work:
+      - A random train/test split would leak information (same night,
+        neighbouring sites) and overstate accuracy. Use grouped splits by
+        site and/or a time-based split (e.g. train 2018-2023, test
+        2024-2025).
+      - Results describe the Boulder-Denver Front Range on mostly
+        clear-to-partly-cloudy winter nights, and should not be generalised
+        beyond that.
+
+L4  The weather is reanalysis, not forecast.
+    Historical forecasts were not collected, so the gap between forecast and
+    actual weather is invisible to the model.
+    How it constrains later work: any claim about forecasting next-night
+    visibility (RQ1) is an upper bound on real-world performance.
