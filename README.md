@@ -25,7 +25,7 @@ Our goal is to build a model that predicts night sky visibility quality for a gi
 ## Current Research Questions
 
 1. How often are Boulder-area nights clear, smoke-free, and moonless at the same time, and how does that vary by month and year from 2018 to 2025?
-2. How much of the summer clear0sky advantage is lost to smoke and how does observed night sky visibility differ between wildfire season and the rest of the year?
+2. How much of the summer clear sky advantage is lost to smoke and how does observed night sky visibility differ between wildfire season and the rest of the year?
 3. After accounting for site, how strongly are cloud cover, smoke, and moon illumination each associated with observed limiting magnitude?
 4. Using only information that would be known the day before how well can next-night sky visibility be predicted, and how does that compare with a site-only baseline?
 
