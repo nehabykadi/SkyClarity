@@ -42,11 +42,14 @@ Our goal is to build a model that predicts night sky visibility quality for a gi
 
 | Source | Provides |
 |---|---|
-| [NWS API](https://www.weather.gov/documentation/services-web-api) | Real-time cloud cover and short-term forecast conditions |
-| [Open-Meteo Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api) | ~5 years of hourly historical cloud cover and weather data |
-| [EPA AirNow API](https://docs.airnowapi.org/) | Hourly PM2.5 and AQI readings, used as a proxy for wildfire smoke concentration |
-| [VIIRS / World Atlas of Artificial Sky Brightness](https://www.lightpollutionmap.info/) | Nighttime lights satellite data providing an annual light pollution baseline |
-| [U.S. Naval Observatory API](https://aa.usno.navy.mil/data/api) | Moon phase and astronomical twilight times for each night in the study window |
+| [Globe at Night](https://globeatnight.org/maps-data/) (NSF NOIRLab) | Citizen-science reports of naked-eye limiting magnitude, our measure of what observers actually saw |
+| [Open-Meteo Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api) | Hourly modelled cloud cover (total, low, mid, high), humidity, temperature, wind and precipitation for each site |
+| [EPA Air Quality System (AQS)](https://aqs.epa.gov/aqsweb/airdata/download_files.html) | Validated daily PM2.5 from the nearest ground monitor |
+| [NOAA Hazard Mapping System (HMS)](https://www.ospo.noaa.gov/products/land/hms.html) | Daily satellite-traced smoke plumes rated light, medium or heavy |
+| [VIIRS Nighttime Lights](https://eogdata.mines.edu/products/vnl/) (Earth Observation Group, Colorado School of Mines) | Annual satellite measurements of artificial light, our light-pollution measure |
+| [Skyfield](https://rhodesmill.org/skyfield/) (computed) | Moon phase, moon position and hours of astronomical darkness for every site and night |
+
+Where each source came from, what every column means and how the datasets were built are documented in [`data/README.md`](data/README.md).
 
 ### References
 
@@ -58,8 +61,36 @@ Our goal is to build a model that predicts night sky visibility quality for a gi
 
 - No direct ground-truth measure of "dark sky visibility" exists, so a proxy (e.g., sky quality meter readings or citizen reports) is needed — introducing possible bias.
 - Wildfire smoke is seasonal, which could skew the model toward certain times of year.
-- Reliable predictions are likely limited to a roughly 24-hour window, since weather and cloud cover forecasts degrade in accuracy beyond that.
+- Observers report mostly on clear nights, so the reports over-represent good conditions.
+- Cloud cover comes from a weather model rather than measurements at each site, and Q4 uses the previous night's actual conditions rather than a weather forecast.
 - No ability to independently record or check data on the ground, which limits confidence in the model's prediction accuracy.
+
+## Milestone 3: Models & Evaluation
+
+| Script | Answers | Results |
+|---|---|---|
+| [`src/prep.py`](src/prep.py) | Shared setup for all questions: Boulder-area site list, good-night definition, previous-night features, 2018–2022 / 2023–2025 split | `data/model_ready/` |
+| [`src/q1_q2a.py`](src/q1_q2a.py) | Q1 and Q2 Part A: how often nights are clear, smoke-free and moonless, and how much of summer's clear-sky advantage smoke cancels | [`results/q1_q2a/`](results/q1_q2a/) |
+| [`src/q2b_q3.py`](src/q2b_q3.py) | Q2 Part B and Q3: wildfire season vs the rest of the year within each site, and site fixed-effects regression of limiting magnitude on cloud, smoke and moon | [`results/q2b_q3/`](results/q2b_q3/) |
+| [`src/q4.py`](src/q4.py) | Q4: site-median baseline vs ridge regression vs gradient-boosted trees, using day-before information only | [`results/q4/`](results/q4/) |
+
+Each results folder has a `summary.txt` with the headline numbers, plus the tables and figures shown on the website.
+
+## How to Reproduce
+
+Tested with Python 3.9.6.
+
+```
+pip install -r requirements.txt
+python src/prep.py
+python src/q1_q2a.py
+python src/q2b_q3.py
+python src/q4.py
+```
+
+Run `src/prep.py` first: it builds `data/model_ready/` from the cleaned datasets in `data/processed/`, and the other three scripts read from it. Package versions are pinned in `requirements.txt` and every script sets a random seed. `src/q4.py` takes a couple of minutes because of the tuning search.
+
+The cleaned datasets are already in the repository. To rebuild them from the original sources, see [`data/README.md`](data/README.md) and `data/build_dataset.py`.
 
 ## Milestone Roadmap
 

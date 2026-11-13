@@ -307,6 +307,39 @@
     color: var(--text-muted);
     margin: 0 0 6px;
   }
+  /* Stat strip: a row of headline numbers (Data Exploration and Models & Evaluation) */
+  .stat-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    margin: 32px 0;
+  }
+  .stat-strip .stat {
+    background: var(--bg-panel);
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .stat-strip .num {
+    font-family: var(--serif);
+    font-size: 30px;
+    line-height: 1.1;
+    color: var(--accent-gold);
+  }
+  .stat-strip .desc {
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--text-muted);
+  }
+  /* Let figures shrink to fit narrow screens instead of forcing sideways scrolling */
+  .eda-figure img, .figure img {
+    max-width: 100%;
+    height: auto;
+  }
 </style>
 </head>
 <body>
@@ -364,7 +397,7 @@
     <ul class="q-list">
       <li>
         <span class="q-mark">?</span>
-        <p>How often are Boulder-area nights clear, smoke-free, and moonless at the dame time, and how does that vary by month and year from 2018 to 2025?</p>
+        <p>How often are Boulder-area nights clear, smoke-free, and moonless at the same time, and how does that vary by month and year from 2018 to 2025?</p>
       </li>
       <li>
         <span class="q-mark">?</span>
@@ -385,34 +418,38 @@
 <section id="data">
   <div class="wide">
     <p class="label">Data sources</p>
-    <h2>Five inputs, five very different sciences</h2>
-    <p class="lede">Weather, air quality, light pollution, and orbital mechanics don't normally share a table. This project pulls them onto one.</p>
+    <h2>Six sources, one nightly table</h2>
+    <p class="lede">Weather, air quality, light pollution, orbital mechanics and citizen science don't normally share a table. This project pulls them onto one, for 16 Colorado sites and every night from 2018 to 2025. Where each source came from, what every column means and how the tables were built are in the <a href="https://github.com/nehabykadi/SkyClarity/blob/main/data/README.md" target="_blank" rel="noopener">data README</a>.</p>
     <div class="grid">
       <div class="card">
-        <h3>NWS API</h3>
-        <p>Real-time cloud cover and short-term forecast conditions from the National Weather Service.</p>
+        <h3>Globe at Night</h3>
+        <p>Citizen-science reports of the faintest stars visible to the naked eye (limiting magnitude). This is our measure of what observers actually saw. NSF NOIRLab, CC BY 4.0.</p>
       </div>
       <div class="card">
         <h3>Open-Meteo Historical Weather API</h3>
-        <p>Roughly five years of hourly historical cloud cover and weather data for pattern analysis.</p>
+        <p>Hourly modelled cloud cover (total, low, mid and high), humidity, temperature, wind and precipitation for each site, averaged over the dark hours of each night.</p>
       </div>
       <div class="card">
-        <h3>EPA AirNow API</h3>
-        <p>Hourly PM2.5 and AQI readings, used as a proxy for wildfire smoke concentration.</p>
+        <h3>EPA Air Quality System (AQS)</h3>
+        <p>Validated daily PM2.5 from the nearest ground monitor, a measure of smoke and other particles at the surface.</p>
       </div>
       <div class="card">
-        <h3>VIIRS / World Atlas of Artificial Sky Brightness</h3>
-        <p>Nighttime lights satellite data providing an annual light pollution baseline for the region.</p>
+        <h3>NOAA Hazard Mapping System (HMS)</h3>
+        <p>Daily satellite-traced smoke plumes rated light, medium or heavy, which capture smoke higher in the air that ground monitors miss.</p>
       </div>
       <div class="card">
-        <h3>U.S. Naval Observatory API</h3>
-        <p>Moon phase and astronomical twilight times for each night in the study window.</p>
+        <h3>VIIRS Nighttime Lights</h3>
+        <p>Annual satellite measurements of artificial light at each site, from the Earth Observation Group at the Colorado School of Mines, as our light-pollution measure.</p>
+      </div>
+      <div class="card">
+        <h3>Skyfield (computed)</h3>
+        <p>Moon phase, moon position and the hours of astronomical darkness for every site and night, calculated from the JPL DE421 ephemeris.</p>
       </div>
     </div>
 
     <div class="aside">
       <p><strong style="color:var(--text-primary); font-weight:600;">Major constraints.</strong> No direct ground-truth measure of "dark sky visibility" exists, so a proxy such as sky quality meter readings or citizen reports is needed — which introduces possible bias.</p>
-      <p>Wildfire smoke is seasonal, which could skew the model toward certain times of year. Reliable predictions are likely limited to a roughly 24-hour window, since weather and cloud cover forecasts degrade in accuracy beyond that.</p>
+      <p>Wildfire smoke is seasonal, and observers report mostly on clear nights, so the reports over-represent good conditions. Cloud cover comes from a weather model rather than measurements at each site, and our prediction question uses the previous night's actual conditions rather than a weather forecast.</p>
       <p>There's also no ability to independently record or check data on the ground, which limits confidence in the model's prediction accuracy.</p>
     </div>
   </div>
@@ -422,25 +459,25 @@
   <div class="wide">
     <p class="label">Data Exploration</p>
     <h2>What the data shows before we model it</h2>
-    <p class="lede">We built two tables: nightly conditions at 16 Colorado Front Range sites, and Globe at Night citizen reports of how dark the sky looked, with that night’s conditions attached. These plots are our first look at how they fit together.</p>
- 
+    <p class="lede">We built two tables: nightly conditions at 16 Colorado Front Range sites, and Globe at Night citizen reports of how dark the sky looked, with that night’s conditions attached. These plots are our first look at how they fit together. They were made before cleaning; after removing duplicates, daytime timestamps and invalid ratings, 46,752 site-nights and 2,088 observer reports remain, and those are what the models below use.</p>
+
     <div class="stat-strip">
-      <div class="stat"><span class="num">46,768</span><span class="desc">site-nights of conditions</span></div>
-      <div class="stat"><span class="num">2,884</span><span class="desc">observer reports matched to a night</span></div>
+      <div class="stat"><span class="num">46,768</span><span class="desc">site-nights of conditions (before cleaning)</span></div>
+      <div class="stat"><span class="num">2,884</span><span class="desc">observer reports matched to a night (before cleaning)</span></div>
       <div class="stat"><span class="num">16</span><span class="desc">sites, 2018–2025</span></div>
-      <div class="stat"><span class="num">2,691</span><span class="desc">reports with a limiting magnitude</span></div>
+      <div class="stat"><span class="num">2,691</span><span class="desc">reports with a limiting magnitude (before cleaning)</span></div>
     </div>
- 
+
     <div class="eda-block">
       <h3>Summer has the clearest skies, and the most smoke</h3>
       <p class="rq">Research questions 1 and 2 · Dataset 1</p>
       <p class="finding">Across all sites, <strong>clear, moonless nights are most common from June to September</strong> (about 14% of site-nights, versus roughly 4–8% in other months). Smoke follows the same calendar: it shows up on about 33% of June nights, 52% of July nights and 60% of August nights. The best season for cloud is also the worst season for smoke.</p>
       <figure class="eda-figure">
         <img src="images/fig5_seasonality.png" alt="Bar and line chart by month showing percent of clear moonless nights and percent of nights with smoke" loading="lazy" width="600" height="400">
-        <figcaption>Share of site-nights that are clear (under 20% modelled cloud) and moonless (moon up less than 10% of dark hours), with the share of nights that had any HMS smoke overhead.</figcaption>
+        <figcaption>Share of site-nights that are clear (under 20% modelled cloud) and moonless (moon up less than 10% of dark hours), with the share of nights that had any HMS smoke overhead. This early look used a stricter moonless definition than the final analysis, so its percentages differ from Research question 1 below.</figcaption>
       </figure>
     </div>
- 
+
     <div class="eda-block">
       <h3>Where you stand matters more than anything else</h3>
       <p class="rq">Research question 3 · Dataset 2</p>
@@ -450,7 +487,7 @@
         <figcaption>Mean limiting magnitude by site against log(1 + VIIRS radiance). Bubble size is the number of reports; sites with fewer than 10 reports are excluded.</figcaption>
       </figure>
     </div>
- 
+
     <div class="eda-block">
       <h3>Modelled cloud is a noisy proxy for what observers see</h3>
       <p class="rq">Research questions 3 and 4 · Dataset 2</p>
@@ -460,7 +497,7 @@
         <figcaption>Mean modelled cloud cover during dark hours against limiting magnitude, with a linear fit.</figcaption>
       </figure>
     </div>
- 
+
     <div class="eda-block">
       <h3>Moonlight shows no clear effect in the raw data</h3>
       <p class="rq">Research question 3 · Dataset 2</p>
@@ -470,7 +507,7 @@
         <figcaption>Limiting magnitude by moon illuminated fraction, split by whether the moon was above the horizon for more than half the dark hours.</figcaption>
       </figure>
     </div>
- 
+
     <div class="eda-block">
       <h3>Smoke: not enough observations to trust the pattern</h3>
       <p class="rq">Research questions 2 and 3 · Dataset 2</p>
@@ -479,13 +516,13 @@
         <img src="images/fig4_smoke_pm25.png" alt="Box plot of limiting magnitude by HMS smoke level next to a scatter plot of PM2.5 against limiting magnitude" loading="lazy" width="600" height="400">
         <figcaption>Left: limiting magnitude by HMS smoke level, with report counts. Right: daily PM2.5 against limiting magnitude.</figcaption>
       </figure>
-      <p class="finding" style="margin-top:36px;">Subtracting each site’s mean shrinks the light-smoke bump from about +1.1 to about +0.4, so part of it was simply <strong>which sites reported on smoky days</strong>. Some remains. Smoke reports come mostly from Crestone, Denver, Longmont and Sommers-Bausch, and the heavy-smoke group is only 5 reports from Denver and Longmont. Smoke is also a daytime-imagery product, so a plume on the map does not guarantee smoke overhead at night. We will treat smoke as a simple present/absent variable and report the uncertainty.</p>
+      <p class="finding" style="margin-top:36px;">Subtracting each site’s mean shrinks the light-smoke bump from about +1.1 to about +0.4, so part of it was simply <strong>which sites reported on smoky days</strong>. Some remains. Smoke reports come mostly from Crestone, Denver, Longmont and Sommers-Bausch, and the heavy-smoke group is only 5 reports from Denver and Longmont. Smoke is also a daytime-imagery product, so a plume on the map does not guarantee smoke overhead at night. We keep the satellite smoke level in the models and report how uncertain its estimates are.</p>
       <figure class="eda-figure">
         <img src="images/fig6_smoke_site_adjusted.png" alt="Three panels: raw limiting magnitude by smoke level, site-adjusted deviation by smoke level, and a heatmap of report counts by site and smoke level" loading="lazy" width="600" height="400">
         <figcaption>Left: raw limiting magnitude. Middle: deviation from each site’s own mean. Right: number of reports at each site and smoke level.</figcaption>
       </figure>
     </div>
- 
+
     <div class="takeaways">
       <h3>What this means for modelling</h3>
       <ul>
@@ -494,6 +531,118 @@
         <li><strong>Smoke can’t be estimated reliably from observations.</strong> We will describe its seasonal pattern using the full nightly dataset and treat any visibility effect as exploratory.</li>
         <li><strong>The observer sample is uneven.</strong> Three sites (Sommers-Bausch, downtown Boulder and downtown Denver) hold 63% of matched reports, and Crestone’s reports come almost entirely from 2022–2023, so we validate by site and by date block instead of random splits.</li>
       </ul>
+    </div>
+  </div>
+</section>
+
+<section id="models">
+  <div class="wide">
+    <p class="label">Models &amp; Evaluation</p>
+    <h2>From description to prediction</h2>
+    <p class="lede">Our four questions need different tools. Questions 1 and 2 ask how often good conditions happen, so we answer them by counting across every night and site, using the full nightly dataset rather than the sparse observer reports. Questions 3 and 4 ask how conditions relate to what people actually saw, so they use models fitted to the observer reports.</p>
+
+    <div class="aside">
+      <p><strong>Shared setup.</strong> Every analysis starts from the same prepared tables, built by <a href="https://github.com/nehabykadi/SkyClarity/blob/main/src/prep.py" target="_blank" rel="noopener"><code>src/prep.py</code></a>, so all four questions use identical definitions. A <strong>good night</strong> is clear (mean modelled cloud cover of 20% or less over the dark hours), smoke-free (no NOAA HMS smoke plume over the site that day) and moonless (moon above the horizon for no more than 25% of the dark hours, or no more than 25% illuminated). Questions 1 and 2 use the 12 Boulder-area sites. Models are trained on 2018–2022 and tested once on 2023–2025.</p>
+      <p><strong>How we measure uncertainty.</strong> Nearby sites share the same weather, and smoke episodes last for weeks: a smoky day is followed by another about 70% of the time. Treating each night as independent would make our results look more certain than they are. Instead, our 95% intervals come from a block bootstrap that resamples whole calendar months, keeping one of each month in every resample.</p>
+    </div>
+
+    <!-- ===================== Q1 ===================== -->
+    <div class="eda-block">
+      <h3>Only about 1 in 11 nights is clear, smoke-free and moonless</h3>
+      <p class="rq">Research question 1 · Descriptive frequency analysis · Dataset 1</p>
+      <p class="finding">Across 12 Boulder-area sites and 2,922 nights (35,064 site-nights), <strong>9.3% of site-nights were good nights</strong> (95% interval 8.2–10.4%). That works out to roughly <strong>two or three good nights a month</strong> at any given site. September is the best month (11.9%) and December the worst (4.8%).</p>
+      <p class="finding">The monthly pattern is much flatter than cloud cover alone suggests. June to September has about twice as many clear nights as the rest of the year, but its short nights, frequent smoke and the moon cancel most of that. Between years, <strong>2019 stands out at 14.5%</strong> (9.8–19.6%), the year with the least summer smoke. Every year from 2020 onward sits between 7% and 9%.</p>
+      <figure class="eda-figure">
+        <img src="images/fig_q1_heatmap.png" alt="Heatmap of the share of good nights for each month and year from 2018 to 2025" loading="lazy" width="600" height="420">
+        <figcaption>Share of Boulder-area site-nights that are clear, smoke-free and moonless, by month and year. Each cell pools 12 sites.</figcaption>
+      </figure>
+      <p class="finding" style="margin-top:36px;"><strong>Does the answer depend on our threshold for "clear"?</strong> We repeated the count with stricter and looser cloud limits. The overall rate moves from 7.1% (10% cloud) to 11.3% (30% cloud), but the shape stays the same at every threshold: a September high and a December low.</p>
+      <figure class="eda-figure">
+        <img src="images/fig_q1_sensitivity.png" alt="Line chart of good-night rate by month at cloud thresholds of 10, 20 and 30 percent" loading="lazy" width="600" height="320">
+        <figcaption>Good-night rate by month at three cloud-cover thresholds.</figcaption>
+      </figure>
+    </div>
+
+    <!-- ===================== Q2 Part A ===================== -->
+    <div class="eda-block">
+      <h3>Smoke cancels most of summer's clear-sky advantage</h3>
+      <p class="rq">Research question 2, Part A · Descriptive comparison · Dataset 1</p>
+      <p class="finding">From June to September, <strong>52.6% of site-nights are clear</strong>, against 27.1% in the rest of the year: an advantage of <strong>25.5 percentage points</strong> (95% interval 21.8–29.3). Once nights with smoke overhead are removed, that advantage shrinks to just 3.0 points. In other words, <strong>smoke cancels about 88% of the summer advantage</strong> (95% interval 70–108%).</p>
+      <p class="finding">August is hit hardest. 59% of its clear nights have smoke overhead, so the share of August nights that are both clear and smoke-free (21.5%) is about the same as January's (20.5%). We left the moon out of this comparison because the lunar cycle is the same in every season, so it cannot explain a seasonal difference.</p>
+      <figure class="eda-figure">
+        <img src="images/fig_q2a_smoke_loss.png" alt="Line chart by month comparing the share of clear nights with the share of clear and smoke-free nights, with the gap shaded" loading="lazy" width="600" height="330">
+        <figcaption>Share of Boulder-area site-nights that are clear, and clear and smoke-free, by month. The shaded gap is clear nights with a smoke plume overhead.</figcaption>
+      </figure>
+      <p class="finding" style="margin-top:36px;"><strong>How much of this depends on light smoke?</strong> Most of it. If only medium and heavy plumes count as smoke, the share of the advantage lost falls from 88% to <strong>28%</strong>. Light plumes are often high and thin, and NOAA draws them from daytime satellite images, so some may not affect the night sky at all. The year-to-year range is also wide: from 13% of the advantage lost in 2019 to more than 100% in 2020, 2021 and 2025, when clear, smoke-free summer nights were actually rarer than in the rest of the year.</p>
+    </div>
+
+    <!-- ===================== Q2 Part B ===================== -->
+    <div class="eda-block">
+      <h3>Yet observers report <em>better</em> skies in wildfire season</h3>
+      <p class="rq">Research question 2, Part B · Within-site comparison · Dataset 2</p>
+      <p class="finding">Comparing each site with itself, reports made from June to September are <strong>0.40 magnitudes better</strong> than reports from the rest of the year (95% interval +0.17 to +0.65). This uses the 1,877 reports from the 7 sites with at least 5 reports in each season. Comparing within sites matters because summer and winter reports come from different places: a raw comparison would mostly measure where people observed, not when.</p>
+      <p class="finding">Six of the seven sites are higher in summer, with the clearest gains at Longmont (+0.89) and downtown Denver (+0.53). Flagstaff Mountain shows the largest gap (+1.54), but from only 8 summer reports. Gross Reservoir is the one site that is clearly worse in summer (−0.84). Crestone, Sommers-Bausch and downtown Boulder show small differences whose intervals include zero.</p>
+      <figure class="eda-figure narrow">
+        <img src="images/q2b_forest.png" alt="Dot plot of the wildfire-season minus rest-of-year difference in limiting magnitude for seven sites, with intervals and the pooled estimate" loading="lazy" width="600" height="398">
+        <figcaption>Limiting magnitude in wildfire season minus the rest of the year, by site, with 95% intervals. The dashed line is the pooled within-site difference. Labels give the number of summer and other reports.</figcaption>
+      </figure>
+      <p class="finding" style="margin-top:36px;"><strong>Why this does not contradict Part A.</strong> Part A counts every night. Observers only report on nights they chose to go out, which in summer usually means a clear one. So these reports describe the nights people picked, not the typical summer night. The result does not show that smoke improves the sky. Per-site intervals use a simple formula and are narrower than the pooled interval, which resamples whole nights.</p>
+    </div>
+
+    <!-- ===================== Q3 ===================== -->
+    <div class="eda-block">
+      <h3>With site held fixed, only cloud cover has a clear association</h3>
+      <p class="rq">Research question 3 · Linear regression with site fixed effects, ordinal logistic check · Dataset 2</p>
+      <p class="finding"><strong>Method.</strong> We regressed limiting magnitude on same-night cloud cover, satellite smoke level, PM2.5 and two moon measures, with a separate intercept for each site so that every comparison is within a site. A linear model keeps the coefficients readable in magnitudes. Because limiting magnitude is a 1–7 scale, we repeated the fit as an ordinal logistic regression as a check. Several reports often share a night, so 95% intervals come from resampling whole nights. Where PM2.5 is missing (mostly at Crestone, far from any monitor), we filled the median and kept a missing-value flag, so all 2,088 reports from 16 sites stay in.</p>
+      <p class="finding"><strong>Results.</strong> Cloud cover is the only condition whose interval excludes zero: <strong>−0.18 magnitudes per standard deviation</strong> (−0.24 to −0.11), or about half a magnitude between a fully clear and a fully cloudy night. Smoke (+0.04, −0.01 to +0.10), PM2.5 (−0.02, −0.10 to +0.05), moon illumination (−0.07, −0.30 to +0.14) and time with the moon up (−0.03, −0.23 to +0.19) are all indistinguishable from zero. The ordinal model agrees on the direction of every one of these, and again only cloud cover has an interval clear of zero.</p>
+      <figure class="eda-figure narrow">
+        <img src="images/q3_coefplot.png" alt="Coefficient plot showing the change in limiting magnitude per standard deviation of each condition, with 95% intervals" loading="lazy" width="600" height="415">
+        <figcaption>Change in limiting magnitude per one standard deviation of each condition, with site fixed effects and 95% intervals from resampling whole nights.</figcaption>
+      </figure>
+      <p class="finding" style="margin-top:36px;"><strong>What this means.</strong> Half a magnitude from clear to overcast is far smaller than reality, where an overcast sky hides almost everything. The gap reflects two things: modelled cloud is a grid average that misses local conditions, and observers mostly report on clear nights, so cloudy reports are rare and atypical. The model explains 46% of the variation, and site alone explains 45%. The missing moon effect is likely the same selection at work: most reports were made with the moon low or dim. These are associations within the reports, not effects of the conditions.</p>
+    </div>
+
+    <!-- ===================== Q4 ===================== -->
+    <div class="eda-block">
+      <h3>Day-before information does not beat knowing the site</h3>
+      <p class="rq">Research question 4 · Regression: site-median baseline, ridge regression, gradient-boosted trees · Dataset 2</p>
+      <p class="finding"><strong>Method.</strong> Each model predicts a report's limiting magnitude using only what would be known the day before: the moon and hours of darkness (both predictable), the site, its light pollution and elevation, the month, and the previous night's weather and smoke. That night's actual weather and smoke are never used. The <strong>baseline</strong> predicts each site's median from the training years. <strong>Ridge regression</strong> is a regularised linear model that stays stable with about 1,400 training reports. <strong>Gradient-boosted trees</strong> can capture interactions, such as smoke mattering more at bright sites, and handle missing PM2.5 natively. We tuned both on 2018–2022 with leave-one-year-out cross-validation (15 ridge settings, 216 tree settings), then scored all three once on the 658 reports from 2023–2025. The metric is mean absolute error (MAE) in magnitudes, because "off by one magnitude" is easy to interpret and is not dominated by a few large misses.</p>
+      <div class="stat-strip">
+        <div class="stat"><span class="num">1.05</span><span class="desc">baseline test MAE (site median)</span></div>
+        <div class="stat"><span class="num">1.13</span><span class="desc">ridge regression test MAE</span></div>
+        <div class="stat"><span class="num">1.10</span><span class="desc">gradient-boosted trees test MAE</span></div>
+        <div class="stat"><span class="num">658</span><span class="desc">test reports, 2023–2025</span></div>
+      </div>
+      <p class="finding"><strong>Results.</strong> Neither model beats the baseline. Ridge is 0.08 magnitudes worse (95% interval 0.04 to 0.12 worse) and the boosted trees 0.04 worse (0.01 to 0.08 worse), with intervals from resampling whole site-nights. Cross-validation on the training years shows the same picture: all three average about 0.98. So the simpler baseline is the model to prefer.</p>
+      <figure class="eda-figure">
+        <img src="images/fig_q4_mae.png" alt="Bar charts of mean absolute error for the baseline, ridge and boosted models, by held-out training year and on the test years" loading="lazy" width="600" height="240">
+        <figcaption>Left: cross-validated MAE for each held-out training year. Right: MAE on the 2023–2025 test years.</figcaption>
+      </figure>
+      <p class="finding" style="margin-top:36px;"><strong>Why the models add nothing.</strong> Shuffling each feature shows what the models rely on: site and light pollution account for 72% of ridge's and 87% of the trees' importance, which is information the baseline already has. The most useful previous-night weather or smoke feature changes error by only 0.03 magnitudes. The main limit is the labels themselves: when two people report from the same site on the same night, they differ by 1.84 magnitudes on average, and no feature of the site or night can separate them.</p>
+      <figure class="eda-figure">
+        <img src="images/fig_q4_importance.png" alt="Horizontal bar charts of permutation importance for each feature in the ridge and boosted models" loading="lazy" width="600" height="273">
+        <figcaption>Increase in test MAE when each feature is shuffled, for ridge (left) and the boosted trees (right).</figcaption>
+      </figure>
+      <p class="finding" style="margin-top:36px;"><strong>Where the errors are.</strong> All three models pull predictions toward the middle of the scale, so the darkest and brightest reports carry most of the error: misses of 2 or more magnitudes are 14% of test reports but 34% of the trees' total error. Many of the worst cases are magnitude 7 reports from bright city sites, several under heavy modelled cloud, which look like observer errors. Error is lowest at Crestone, the darkest and most consistent site. 2024 and 2025 are harder than 2023 for every model, including the baseline, which points to a shift in the reports rather than in any one model.</p>
+      <figure class="eda-figure">
+        <img src="images/fig_q4_error_by_group.png" alt="Grouped bar charts of test MAE for each model by site, by season and by moon phase" loading="lazy" width="600" height="210">
+        <figcaption>Test MAE by site (sites with 10 or more test reports), by season and by moon phase.</figcaption>
+      </figure>
+    </div>
+
+    <div class="takeaways">
+      <h3>What our results do and do not show</h3>
+      <ul>
+        <li><strong>Conditions and observations tell different stories.</strong> Across all nights, smoke cancels most of summer's clear-sky advantage (Q2 Part A). Yet observers report better skies in summer (Q2 Part B), because they choose when to go out. Q1 and Q2 Part A describe conditions; Q2 Part B, Q3 and Q4 describe the nights people chose to observe.</li>
+        <li><strong>Site dominates everything.</strong> Where you stand explains far more than cloud, smoke or moon, and a site-only baseline is as good a predictor as anything we built.</li>
+        <li><strong>Light smoke drives the smoke headline.</strong> Smoke cancels 88% of the summer advantage if light plumes count, and 28% if only medium and heavy ones do. NOAA also changed how it records smoke in July 2022.</li>
+        <li><strong>Inputs are approximate.</strong> Cloud cover is modelled on a shared grid, smoke plumes are drawn from daytime images, and limiting magnitude is a naked-eye judgement. The 12 Boulder-area sites are not 12 independent samples.</li>
+        <li><strong>Smoke is thin in the reports.</strong> Only 107 reports fall on smoke days (34 in the test years), so no smoke estimate from the reports is precise.</li>
+        <li><strong>None of this is causal.</strong> Associations and feature importance describe these reports. They do not show what clouds, smoke or the moon do to the sky.</li>
+        <li><strong>Q4 is not a true forecast test.</strong> "Day-before" means the previous night's actual conditions, not a weather forecast. Light pollution uses that year's annual satellite value, which is not published until the year ends. Every test site also appears in training, so accuracy at a new site would be worse.</li>
+        <li><strong>Tuning results are close to ties.</strong> The best tree settings differ by under 0.001 MAE in cross-validation, so the exact choice can vary between computers. The conclusion that neither model beats the baseline does not.</li>
+      </ul>
+      <p style="margin-top:16px;">Code: <a href="https://github.com/nehabykadi/SkyClarity/blob/main/src/prep.py" target="_blank" rel="noopener"><code>src/prep.py</code></a> · <a href="https://github.com/nehabykadi/SkyClarity/blob/main/src/q1_q2a.py" target="_blank" rel="noopener"><code>src/q1_q2a.py</code></a> · <a href="https://github.com/nehabykadi/SkyClarity/blob/main/src/q2b_q3.py" target="_blank" rel="noopener"><code>src/q2b_q3.py</code></a> · <a href="https://github.com/nehabykadi/SkyClarity/blob/main/src/q4.py" target="_blank" rel="noopener"><code>src/q4.py</code></a> · Results: <a href="https://github.com/nehabykadi/SkyClarity/tree/main/results" target="_blank" rel="noopener"><code>results/</code></a></p>
     </div>
   </div>
 </section>

@@ -6,37 +6,37 @@ Features (20): moon_illum_frac, moon_up_frac, moon_alt_max_deg, n_dark_hours, lo
 
 Chosen settings (leave-one-year-out CV on the training years)
   Ridge:   alpha = 10
-  Boosted: l2_regularization = 1.0, learning_rate = 0.1, loss = absolute_error, max_iter = 300, max_leaf_nodes = 7, min_samples_leaf = 10
+  Boosted: l2_regularization = 10.0, learning_rate = 0.2, loss = absolute_error, max_iter = 100, max_leaf_nodes = 7, min_samples_leaf = 10
 
 Cross-validated MAE (mean and sd over the 5 held-out years)
              mean    std
   model                 
   Baseline  0.982  0.092
   Ridge     0.986  0.055
-  Boosted   0.978  0.100
+  Boosted   0.979  0.091
 
 Test MAE, 2023-2025 (scored once)
   Baseline MAE 1.053, within 1 magnitude 75.1%
   Ridge    MAE 1.133, within 1 magnitude 49.2%, gain over baseline -0.080 (95% CI -0.123 to -0.039)
-  Boosted  MAE 1.084, within 1 magnitude 52.4%, gain over baseline -0.031 (95% CI -0.063 to +0.001)
+  Boosted  MAE 1.095, within 1 magnitude 51.1%, gain over baseline -0.041 (95% CI -0.076 to -0.006)
 
 Test MAE by group
   grouping            group   n  Baseline  Ridge  Boosted
-      site   sommers_bausch 197      0.92   1.02     0.96
+      site   sommers_bausch 197      0.92   1.02     0.98
       site boulder_downtown 130      1.25   1.26     1.23
-      site         crestone  76      0.50   0.73     0.58
-      site  denver_downtown  64      0.89   0.91     0.88
-      site    flagstaff_mtn  59      1.29   1.40     1.33
-      site  gross_reservoir  37      1.22   1.47     1.35
-      site         longmont  34      1.41   1.42     1.59
-      site        nederland  22      1.36   1.36     1.25
-      site        ncar_mesa  18      1.67   1.68     1.72
-    season          Jun-Sep  59      0.92   0.96     1.01
-    season          Oct-May 599      1.07   1.15     1.09
+      site         crestone  76      0.50   0.73     0.62
+      site  denver_downtown  64      0.89   0.91     0.91
+      site    flagstaff_mtn  59      1.29   1.40     1.32
+      site  gross_reservoir  37      1.22   1.47     1.28
+      site         longmont  34      1.41   1.42     1.60
+      site        nederland  22      1.36   1.36     1.30
+      site        ncar_mesa  18      1.67   1.68     1.64
+    season          Jun-Sep  59      0.92   0.96     0.95
+    season          Oct-May 599      1.07   1.15     1.11
       moon         moonless 486      1.11   1.18     1.14
-      moon          moonlit 172      0.88   1.00     0.92
+      moon          moonlit 172      0.88   1.00     0.96
 
-Most important features (permutation, test set): Ridge: site_id, log_viirs_radiance, prev_pm25_missing, prev_dew_point_c_mean; Boosted: site_id, log_viirs_radiance, prev_log_pm25_ugm3, moon_illum_frac
+Most important features (permutation, test set): Ridge: site_id, log_viirs_radiance, prev_pm25_missing, prev_dew_point_c_mean; Boosted: site_id, log_viirs_radiance, moon_illum_frac, prev_cloud_mid_mean
 
 Caveats: 'within 1 magnitude' favours the baseline, whose whole-number predictions match the
 whole-number target exactly or by 1, while the models predict in between; compare MAE first.
@@ -50,12 +50,12 @@ INTERPRETATION, ERRORS AND LIMITATIONS
 
 1. What the models found, in terms of the project question
   Q4 asks whether day-before information predicts next-night visibility better than knowing
-  the site. It does not. The better model (Boosted) changes test MAE by -0.031 magnitudes
-  against the site median (95% CI -0.063 to +0.001); ridge is reliably worse. The same
+  the site. It does not. The better model (Boosted) changes test MAE by -0.041 magnitudes
+  against the site median (95% CI -0.076 to -0.006); ridge is reliably worse. The same
   tie appears in cross-validation on the training years, so this is not a test-set accident.
 
   Where the models' skill comes from (permutation importance on the test set): site and
-  light pollution (log_viirs_radiance) account for 72% of ridge's and 88% of boosted's
+  light pollution (log_viirs_radiance) account for 72% of ridge's and 87% of boosted's
   total importance. That is the same information the baseline already uses. The most useful
   previous-night weather or smoke feature (prev_pm25_missing, in Ridge) raises MAE by only
   0.033 magnitudes when shuffled.
@@ -86,14 +86,14 @@ INTERPRETATION, ERRORS AND LIMITATIONS
      (actual - predicted) by the reported magnitude:
                   Baseline  Ridge  Boosted
     limiting_mag                          
-    1                -1.64  -1.90    -1.63
-    2                -0.70  -0.99    -0.69
-    3                +0.19  -0.05    +0.18
-    4                +0.71  +0.63    +0.80
-    5                +1.28  +1.23    +1.39
-    6                +1.07  +1.24    +1.19
-    7                +1.59  +1.65    +1.90
-     Boosted predictions only span 1.8 to 6.0. The darkest and brightest reports
+    1                -1.64  -1.90    -1.64
+    2                -0.70  -0.99    -0.68
+    3                +0.19  -0.05    +0.20
+    4                +0.71  +0.63    +0.81
+    5                +1.28  +1.23    +1.40
+    6                +1.07  +1.24    +1.09
+    7                +1.59  +1.65    +1.76
+     Boosted predictions only span 1.6 to 6.5. The darkest and brightest reports
      are where the error lives; the models cannot tell an unusually good night is coming.
   b) Errors of 2+ magnitudes are 14% of test reports but 34% of Boosted's total error.
   c) Label noise sets a floor. On the 102 site-nights with 2+ test reports, reports for
@@ -101,21 +101,21 @@ INTERPRETATION, ERRORS AND LIMITATIONS
      No model using site- or night-level features can separate those reports.
   d) Worst Boosted errors (cloud = reanalysis mean cloud cover over the dark hours, %):
     night_date          site_id  limiting_mag  Baseline  Ridge  Boosted  cloud  moon
-    2025-04-28   sommers_bausch          7.00      2.00   2.77     2.21  40.43  0.03
-    2024-04-25 boulder_downtown          7.00      3.00   2.80     2.34 100.00  0.95
-    2024-12-07   sommers_bausch          7.00      2.00   2.71     2.78   0.00  0.46
-    2023-02-18         longmont          7.00      4.00   3.57     2.92  65.40  0.02
-    2023-02-21 boulder_downtown          7.00      3.00   3.09     3.01  99.90  0.06
-    2025-04-23         longmont          7.00      4.00   3.94     3.04  82.14  0.17
+    2025-04-28   sommers_bausch          7.00      2.00   2.77     2.09  40.43  0.03
+    2024-04-25 boulder_downtown          7.00      3.00   2.80     2.59 100.00  0.95
+    2023-02-21 boulder_downtown          7.00      3.00   3.09     2.63  99.90  0.06
+    2023-02-18         longmont          7.00      4.00   3.57     2.77  65.40  0.02
+    2024-12-07   sommers_bausch          7.00      2.00   2.71     2.97   0.00  0.46
+    2025-03-25   sommers_bausch          6.00      2.00   3.01     2.16   0.00  0.14
      These are magnitude 7 reports from bright city sites (Sommers-Bausch, Boulder, Longmont),
      several under heavy reanalysis cloud. They look like observer or chart-matching errors,
      or local clearing the hourly reanalysis grid misses, rather than something to learn.
-  e) Test MAE by year (Baseline / Ridge / Boosted): 2023 0.86 / 0.95 / 0.86; 2024 1.19 / 1.29 / 1.19; 2025 1.17 / 1.24 / 1.25
+  e) Test MAE by year (Baseline / Ridge / Boosted): 2023 0.86 / 0.95 / 0.89; 2024 1.19 / 1.29 / 1.20; 2025 1.17 / 1.24 / 1.24
      2024-2025 are harder for every model, including the baseline, so the drift is in the
      reports themselves, not in one model.
   f) Conditions (MAE Baseline / Ridge / Boosted):
-     reanalysis cloud > 50%: 1.10 / 1.17 / 1.12 (n=318); <= 50%: 1.01 / 1.10 / 1.05 (n=340)
-     smoke overhead (HMS > 0): 0.68 / 0.81 / 0.83 (n=34); none: 1.07 / 1.15 / 1.10 (n=624)
+     reanalysis cloud > 50%: 1.10 / 1.17 / 1.12 (n=318); <= 50%: 1.01 / 1.10 / 1.07 (n=340)
+     smoke overhead (HMS > 0): 0.68 / 0.81 / 0.79 (n=34); none: 1.07 / 1.15 / 1.11 (n=624)
      48% of test reports fall on nights the reanalysis calls mostly cloudy, a sign
      the nightly averages do not capture what the observer saw. Smoke-day error is lower, but
      34 reports is too few to read anything into it.
@@ -124,7 +124,7 @@ INTERPRETATION, ERRORS AND LIMITATIONS
   The data describe places and nights, not people, and the output is a stargazing guide rather
   than a consequential decision, so person-level fairness does not apply. Observer coordinates
   were dropped (cleaning report 3.1). The relevant subgroup is the site:
-    Boosted vs baseline, by site (negative = model better): nederland -0.12, boulder_downtown -0.03, denver_downtown -0.01, sommers_bausch +0.04, flagstaff_mtn +0.05, ncar_mesa +0.05, crestone +0.08, gross_reservoir +0.13, longmont +0.18
+    Boosted vs baseline, by site (negative = model better): nederland -0.07, ncar_mesa -0.02, boulder_downtown -0.02, denver_downtown +0.02, flagstaff_mtn +0.03, sommers_bausch +0.06, gross_reservoir +0.07, crestone +0.12, longmont +0.19
   Error is lowest at the darkest, most consistent site (Crestone) and at heavily lit Denver,
   and highest at foothill and small-town sites with fewer reports (NCAR Mesa, Longmont,
   Nederland, Flagstaff), where reports vary most.

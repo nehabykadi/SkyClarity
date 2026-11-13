@@ -224,3 +224,5 @@ data/raw/globe_at_night/
 data/raw/viirs/
 data/raw/ephemeris/
 .venv/
+data/model_ready/
+.idea/

@@ -12,22 +12,23 @@ boulder_downtown      10     336      2.900      2.812  0.087  -1.209    1.384
    flagstaff_mtn       8     161      5.375      3.832  1.543   0.983    2.102
 
 Q3
-n = 1950 reports (138 dropped for missing values), 602 nights, 14 sites. R^2 = 0.344
+n = 2088 reports (0 dropped for missing values), 710 nights, 16 sites. R^2 = 0.462
 Features: ['cloud_cover_mean', 'hms_smoke_level', 'log_pm25_ugm3', 'pm25_missing', 'moon_illum_frac', 'moon_up_frac'] (+ site fixed effects)
 Smoke-like columns: ['hms_smoke_level']
 
             term   coef  ci_low  ci_high  coef_per_sd  ci_low_per_sd  ci_high_per_sd
-cloud_cover_mean -0.006  -0.008   -0.004       -0.192         -0.258          -0.126
- hms_smoke_level  0.089  -0.073    0.296        0.028         -0.023           0.093
-   log_pm25_ugm3 -0.032  -0.171    0.093       -0.020         -0.107           0.058
-    pm25_missing -0.000  -0.000    0.000       -0.000         -0.000           0.000
- moon_illum_frac -0.240  -1.146    0.588       -0.065         -0.310           0.159
-    moon_up_frac -0.050  -0.815    0.780       -0.015         -0.236           0.226
+cloud_cover_mean -0.005  -0.007   -0.003       -0.177         -0.238          -0.113
+ hms_smoke_level  0.120  -0.030    0.313        0.038         -0.009           0.099
+   log_pm25_ugm3 -0.036  -0.169    0.087       -0.022         -0.102           0.052
+    pm25_missing -0.019  -0.223    0.205       -0.005         -0.055           0.051
+ moon_illum_frac -0.252  -1.058    0.489       -0.070         -0.295           0.136
+    moon_up_frac -0.084  -0.767    0.647       -0.025         -0.229           0.194
 
 Ordinal logistic check
-            term  log_odds  odds_ratio  ci_low  ci_high  same_sign_as_ols  n_boot_ok
-cloud_cover_mean    -0.009       0.991  -0.012   -0.006              True        300
- hms_smoke_level     0.151       1.162  -0.118    0.439              True        300
-   log_pm25_ugm3    -0.052       0.949  -0.267    0.139              True        300
- moon_illum_frac    -0.548       0.578  -1.914    0.402              True        300
-    moon_up_frac     0.035       1.036  -0.915    1.419             False        300
+            term  log_odds  odds_ratio  ci_low_log_odds  ci_high_log_odds  same_sign_as_ols  n_boot_ok
+cloud_cover_mean    -0.008       0.992           -0.011            -0.005              True        300
+ hms_smoke_level     0.250       1.284           -0.011             0.532              True        300
+   log_pm25_ugm3    -0.060       0.942           -0.264             0.104              True        300
+    pm25_missing     0.040       1.041           -0.492             0.610             False        300
+ moon_illum_frac    -0.559       0.572           -1.755             0.665              True        300
+    moon_up_frac    -0.118       0.888           -1.311             1.049              True        300
