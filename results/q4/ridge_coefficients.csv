@@ -1,0 +1,36 @@
+feature,coef,kind
+site_id_crestone,1.1095,site
+site_id_ncar_mesa,-0.8288,site
+site_id_nederland,0.7769,site
+site_id_golden_gate_sp,-0.6612,site
+log_viirs_radiance,-0.5629,per 1 SD
+site_id_longmont,0.5373,site
+site_id_sommers_bausch,-0.5209,site
+site_id_boulder_downtown,-0.3689,site
+site_id_lyons,0.3624,site
+prev_dew_point_c_mean,0.2833,per 1 SD
+site_id_flagstaff_mtn,-0.2241,site
+moon_up_frac,-0.2165,per 1 SD
+site_id_brainard_lake,-0.1915,site
+prev_cloud_mid_mean,-0.1678,per 1 SD
+n_dark_hours,0.1655,per 1 SD
+site_id_rmnp_alpine_vc,-0.1649,site
+site_id_denver_downtown,-0.1537,site
+site_id_estes_park,0.1391,site
+prev_precip_mm_sum,0.1363,per 1 SD
+site_id_pawnee_buttes,0.1145,site
+prev_pm25_missing,0.1112,per 1 SD
+site_id_jackson_lake_sp,0.1101,site
+elevation_m,0.0800,per 1 SD
+prev_wind_speed_ms_mean,-0.0748,per 1 SD
+moon_illum_frac,0.0696,per 1 SD
+moon_alt_max_deg,0.0685,per 1 SD
+month_cos,-0.0542,per 1 SD
+site_id_gross_reservoir,-0.0358,site
+month_sin,0.0332,per 1 SD
+prev_rel_humidity_mean,-0.0209,per 1 SD
+prev_log_pm25_ugm3,-0.0205,per 1 SD
+prev_cloud_low_mean,0.0161,per 1 SD
+prev_cloud_cover_mean,-0.0157,per 1 SD
+prev_cloud_high_mean,-0.0155,per 1 SD
+prev_hms_smoke_level,-0.0062,per 1 SD

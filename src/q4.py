@@ -13,10 +13,11 @@ Outputs: results/q4/
     tuning_grid.csv              every tuning setting tried, with its cross-validated MAE
     test_metrics.csv             test MAE, share within 1 magnitude, gain over baseline with 95% CI
     error_by_group.csv           test MAE by site, wildfire season and moon phase
-    permutation_importance.csv   drop in test MAE when each feature is shuffled
+    permutation_importance.csv   increase in test MAE when each feature is shuffled
+    ridge_coefficients.csv       ridge coefficients, per 1 SD of each feature (site held fixed)
     predictions_test.csv         every test report with each model's prediction
     fig_q4_mae.png, fig_q4_error_by_group.png, fig_q4_importance.png
-    summary.txt                  headline numbers for the write-up
+    summary.txt                  headline numbers, then interpretation, errors and limitations
 
 Models
     Baseline     each site's median limiting magnitude in the training years (overall median
@@ -241,6 +242,164 @@ def importance(test, fitted):
     return pd.concat(rows).sort_values(["model", "mae_increase"], ascending=[True, False])
 
 
+def ridge_coefficients(fitted):
+    """Ridge coefficients: change in predicted magnitude per 1 SD of a feature, site held fixed."""
+    pipe = fitted["Ridge"]
+    names = pipe.named_steps["prep"].get_feature_names_out()
+    coef = pd.DataFrame({"feature": [n.split("__", 1)[1] for n in names],
+                         "coef": pipe.named_steps["model"].coef_})
+    coef["kind"] = np.where(coef.feature.str.startswith("site_id_"), "site", "per 1 SD")
+    return coef.reindex(coef.coef.abs().sort_values(ascending=False).index)
+
+
+def residual_check(train):
+    """Training years only: how much is left to explain once the site is known?
+
+    Correlates each day-before feature (and, for reference, the same night's cloud and smoke,
+    which Q4 never uses) with the gap between a report and its site's training median.
+    """
+    base = SiteMedian().fit(train[FEATURES], train[TARGET]).predict(train[FEATURES])
+    resid = train[TARGET] - base
+    day_before = [c for c in NUMERIC if c not in ("log_viirs_radiance", "elevation_m")]
+    corr = train[day_before].corrwith(resid)
+    same_night = train[["cloud_cover_mean", "hms_smoke_level"]].corrwith(resid)
+    by_year = resid.groupby(train.cv_group).mean()
+    return corr.reindex(corr.abs().sort_values(ascending=False).index), same_night, by_year
+
+
+def interpretation(train, test, met, groups, imp, coef):
+    """Interpretation, errors and limitations section of summary.txt."""
+    corr, same_night, by_year = residual_check(train)
+    t = test.copy()
+    for m in MODELS:
+        t[f"err_{m}"] = t[TARGET] - t[f"pred_{m}"]
+    best = met.drop("Baseline").gain_vs_baseline.idxmax()
+    gain, lo, hi = met.loc[best, ["gain_vs_baseline", "gain_ci_low", "gain_ci_high"]]
+    share = (imp[imp.feature.isin(["site_id", "log_viirs_radiance"])].groupby("model").mae_increase.sum()
+             / imp[imp.mae_increase > 0].groupby("model").mae_increase.sum())
+    num_coef = coef[coef.kind == "per 1 SD"].head(5)
+    weather = imp[imp.feature.str.startswith("prev_")]
+    top_w = weather.sort_values("mae_increase").iloc[-1]
+
+    signed = t.groupby(TARGET)[[f"err_{m}" for m in MODELS]].mean()
+    signed.columns = MODELS
+    signed.index = signed.index.astype(int)
+    big = t[f"err_{best}"].abs() >= 2
+    multi = t.groupby(["site_id", "night_date"], observed=True)[TARGET].agg(["size", "min", "max"])
+    multi = multi[multi["size"] >= 2]
+    worst = t.reindex(t[f"err_{best}"].abs().sort_values(ascending=False).index).head(6)
+    cloudy = t.cloud_cover_mean > 50
+    smoky = t.hms_smoke_level > 0
+    year_mae = t.groupby("year")[[f"err_{m}" for m in MODELS]].apply(lambda d: d.abs().mean())
+    year_mae.columns = MODELS
+    site_rows = groups[groups.grouping == "site"].set_index("group")
+    site_gap = (site_rows[best] - site_rows.Baseline).sort_values()
+    mae_of = lambda mask: " / ".join(f"{t.loc[mask, f'err_{m}'].abs().mean():.2f}" for m in MODELS)
+    indent = lambda s: "    " + s.replace("\n", "\n    ")
+
+    return [
+        "=" * 96,
+        "INTERPRETATION, ERRORS AND LIMITATIONS",
+        "=" * 96,
+        "",
+        "1. What the models found, in terms of the project question",
+        f"  Q4 asks whether day-before information predicts next-night visibility better than knowing",
+        f"  the site. It does not. The better model ({best}) changes test MAE by {gain:+.3f} magnitudes",
+        f"  against the site median (95% CI {lo:+.3f} to {hi:+.3f}); ridge is reliably worse. The same",
+        "  tie appears in cross-validation on the training years, so this is not a test-set accident.",
+        "",
+        "  Where the models' skill comes from (permutation importance on the test set): site and",
+        f"  light pollution (log_viirs_radiance) account for {share['Ridge']:.0%} of ridge's and "
+        f"{share['Boosted']:.0%} of boosted's",
+        "  total importance. That is the same information the baseline already uses. The most useful",
+        f"  previous-night weather or smoke feature ({top_w.feature}, in {top_w.model}) raises MAE by only",
+        f"  {top_w.mae_increase:.3f} magnitudes when shuffled.",
+        "",
+        "  Ridge coefficients (predicted magnitude change per 1 SD of the feature, site held fixed),",
+        "  largest five non-site terms:",
+        indent(num_coef[["feature", "coef"]].to_string(index=False, float_format="{:+.3f}".format)),
+        "  With site held fixed, radiance only varies between years within a site (annual VIIRS), so",
+        "  its coefficient mostly absorbs year-to-year shifts in the reports, not light pollution itself.",
+        "  The weather terms are a fraction of a magnitude per SD on a 1-7 scale. All of these are",
+        "  associations within the reports, not effects (see section 4).",
+        "",
+        "  Why so little is learnable (training years only, gap = report minus its site's median):",
+        f"    strongest day-before correlation with the gap: {corr.index[0]} {corr.iloc[0]:+.3f}; "
+        f"next {corr.index[1]} {corr.iloc[1]:+.3f}",
+        f"    for reference, the SAME night's cloud cover correlates {same_night['cloud_cover_mean']:+.3f} "
+        f"and smoke {same_night['hms_smoke_level']:+.3f}",
+        f"    average gap by year: " + ", ".join(f"{y} {v:+.2f}" for y, v in by_year.items()),
+        "  Even perfect knowledge of the night's cloud would explain little, because observers mostly",
+        "  report when they can see stars. Year-to-year swings in the average report (likely a changing",
+        "  mix of observers) are larger than any weather signal, and no day-before feature can see them.",
+        "",
+        "2. Errors, difficult cases and failure modes",
+        "  a) All three models shrink toward the middle of the scale. Mean signed error",
+        "     (actual - predicted) by the reported magnitude:",
+        indent(signed.to_string(float_format="{:+.2f}".format)),
+        f"     {best} predictions only span {t[f'pred_{best}'].min():.1f} to {t[f'pred_{best}'].max():.1f}. "
+        "The darkest and brightest reports",
+        "     are where the error lives; the models cannot tell an unusually good night is coming.",
+        f"  b) Errors of 2+ magnitudes are {big.mean():.0%} of test reports but "
+        f"{t.loc[big, f'err_{best}'].abs().sum() / t[f'err_{best}'].abs().sum():.0%} of {best}'s total error.",
+        f"  c) Label noise sets a floor. On the {len(multi)} site-nights with 2+ test reports, reports for",
+        f"     the same place and night differ by {(multi['max'] - multi['min']).mean():.2f} magnitudes on "
+        f"average ({(multi['max'] - multi['min'] >= 2).mean():.0%} differ by 2+).",
+        "     No model using site- or night-level features can separate those reports.",
+        f"  d) Worst {best} errors (cloud = reanalysis mean cloud cover over the dark hours, %):",
+        indent(worst[["night_date", "site_id", TARGET] + [f"pred_{m}" for m in MODELS]
+                     + ["cloud_cover_mean", "moon_illum_frac"]]
+               .assign(night_date=worst.night_date.dt.strftime("%Y-%m-%d"))
+               .rename(columns={f"pred_{m}": m for m in MODELS} | {"cloud_cover_mean": "cloud",
+                                                                    "moon_illum_frac": "moon"})
+               .to_string(index=False, float_format="{:.2f}".format)),
+        "     These are magnitude 7 reports from bright city sites (Sommers-Bausch, Boulder, Longmont),",
+        "     several under heavy reanalysis cloud. They look like observer or chart-matching errors,",
+        "     or local clearing the hourly reanalysis grid misses, rather than something to learn.",
+        f"  e) Test MAE by year (Baseline / Ridge / Boosted): "
+        + "; ".join(f"{y} " + " / ".join(f"{v:.2f}" for v in r) for y, r in year_mae.iterrows()),
+        "     2024-2025 are harder for every model, including the baseline, so the drift is in the",
+        "     reports themselves, not in one model.",
+        "  f) Conditions (MAE Baseline / Ridge / Boosted):",
+        f"     reanalysis cloud > 50%: {mae_of(cloudy)} (n={cloudy.sum()}); "
+        f"<= 50%: {mae_of(~cloudy)} (n={(~cloudy).sum()})",
+        f"     smoke overhead (HMS > 0): {mae_of(smoky)} (n={smoky.sum()}); "
+        f"none: {mae_of(~smoky)} (n={(~smoky).sum()})",
+        f"     {cloudy.mean():.0%} of test reports fall on nights the reanalysis calls mostly cloudy, a sign",
+        "     the nightly averages do not capture what the observer saw. Smoke-day error is lower, but",
+        "     34 reports is too few to read anything into it.",
+        "",
+        "3. Subgroups and fairness",
+        "  The data describe places and nights, not people, and the output is a stargazing guide rather",
+        "  than a consequential decision, so person-level fairness does not apply. Observer coordinates",
+        "  were dropped (cleaning report 3.1). The relevant subgroup is the site:",
+        f"    {best} vs baseline, by site (negative = model better): "
+        + ", ".join(f"{s} {v:+.2f}" for s, v in site_gap.items()),
+        "  Error is lowest at the darkest, most consistent site (Crestone) and at heavily lit Denver,",
+        "  and highest at foothill and small-town sites with fewer reports (NCAR Mesa, Longmont,",
+        "  Nederland, Flagstaff), where reports vary most.",
+        "  Coverage is uneven: Sommers-Bausch, Boulder and Denver supply most reports, sites with under",
+        f"  {MIN_SITE_REPORTS} training reports get the overall median, and Pawnee Buttes and RMNP have no test",
+        "  reports at all. Results for small sites are not reliable.",
+        "",
+        "4. What this evaluation does not prove",
+        "  - Not causal. Importance and coefficients describe what the models lean on in these reports.",
+        "    Site and radiance also stand in for who observes where, so they are not pure light effects.",
+        "  - Not evidence that weather or smoke do not matter. Clouds and smoke physically dim the sky;",
+        "    here the signal is hidden by self-selection (people report on clear nights), reanalysis",
+        "    cloud that misses local gaps, and noisy naked-eye labels. Q3 looks at this directly.",
+        "  - Not a forecast test. 'Day-before' means the previous night's actual conditions; a real",
+        "    weather forecast might do better, and was not available in this dataset.",
+        "  - Not a new-site test. Every test site had training reports; in cross-validation, an unseen",
+        "    site (Crestone in 2022) broke the baseline and the trees. Predictions for new places would",
+        "    be much less accurate.",
+        "  - Not a test of an average night. Reports exist only when someone went out, so results",
+        "    describe nights people chose to observe, mostly Oct-May (only 59 test reports in Jun-Sep).",
+        "  - Three test years from one region. The gap to the baseline could change with other years,",
+        "    a different observer mix, or more smoke-heavy seasons.",
+    ]
+
+
 # ---------------------------------------------------------------- figures
 def fig_mae(folds, metrics):
     fig, (a, b) = plt.subplots(1, 2, figsize=(10, 4), gridspec_kw={"width_ratios": [3, 2]})
@@ -321,8 +480,10 @@ def main():
     metrics = test_metrics(test, rng)
     groups = error_by_group(test)
     imp = importance(test, fitted)
+    coef = ridge_coefficients(fitted)
 
     metrics.to_csv(RESULTS / "test_metrics.csv", index=False, float_format="%.4f")
+    coef.to_csv(RESULTS / "ridge_coefficients.csv", index=False, float_format="%.4f")
     groups.to_csv(RESULTS / "error_by_group.csv", index=False, float_format="%.4f")
     imp.to_csv(RESULTS / "permutation_importance.csv", index=False, float_format="%.4f")
     test[["gan_id", "night_date", "site_id", TARGET] + [f"pred_{m}" for m in MODELS]].to_csv(
@@ -367,7 +528,8 @@ def main():
         "'Day-before information' is the previous night's actual conditions, not a forecast;",
         "Pawnee Buttes and RMNP have no test reports and several sites have fewer than 10;",
         f"only {int((test.hms_smoke_level > 0).sum())} test reports fall on smoke days.",
-    ]
+        "",
+    ] + interpretation(train, test, met, groups, imp, coef)
     (RESULTS / "summary.txt").write_text("\n".join(lines) + "\n")
     print("\n".join(lines))
 

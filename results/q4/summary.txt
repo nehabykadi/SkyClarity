@@ -43,3 +43,107 @@ whole-number target exactly or by 1, while the models predict in between; compar
 'Day-before information' is the previous night's actual conditions, not a forecast;
 Pawnee Buttes and RMNP have no test reports and several sites have fewer than 10;
 only 34 test reports fall on smoke days.
+
+================================================================================================
+INTERPRETATION, ERRORS AND LIMITATIONS
+================================================================================================
+
+1. What the models found, in terms of the project question
+  Q4 asks whether day-before information predicts next-night visibility better than knowing
+  the site. It does not. The better model (Boosted) changes test MAE by -0.031 magnitudes
+  against the site median (95% CI -0.063 to +0.001); ridge is reliably worse. The same
+  tie appears in cross-validation on the training years, so this is not a test-set accident.
+
+  Where the models' skill comes from (permutation importance on the test set): site and
+  light pollution (log_viirs_radiance) account for 72% of ridge's and 88% of boosted's
+  total importance. That is the same information the baseline already uses. The most useful
+  previous-night weather or smoke feature (prev_pm25_missing, in Ridge) raises MAE by only
+  0.033 magnitudes when shuffled.
+
+  Ridge coefficients (predicted magnitude change per 1 SD of the feature, site held fixed),
+  largest five non-site terms:
+                  feature   coef
+       log_viirs_radiance -0.563
+    prev_dew_point_c_mean +0.283
+             moon_up_frac -0.216
+      prev_cloud_mid_mean -0.168
+             n_dark_hours +0.166
+  With site held fixed, radiance only varies between years within a site (annual VIIRS), so
+  its coefficient mostly absorbs year-to-year shifts in the reports, not light pollution itself.
+  The weather terms are a fraction of a magnitude per SD on a 1-7 scale. All of these are
+  associations within the reports, not effects (see section 4).
+
+  Why so little is learnable (training years only, gap = report minus its site's median):
+    strongest day-before correlation with the gap: prev_dew_point_c_mean +0.093; next month_sin -0.070
+    for reference, the SAME night's cloud cover correlates -0.125 and smoke +0.008
+    average gap by year: 2018 +0.35, 2019 +0.21, 2020 -0.07, 2021 -0.24, 2022 -0.04
+  Even perfect knowledge of the night's cloud would explain little, because observers mostly
+  report when they can see stars. Year-to-year swings in the average report (likely a changing
+  mix of observers) are larger than any weather signal, and no day-before feature can see them.
+
+2. Errors, difficult cases and failure modes
+  a) All three models shrink toward the middle of the scale. Mean signed error
+     (actual - predicted) by the reported magnitude:
+                  Baseline  Ridge  Boosted
+    limiting_mag                          
+    1                -1.64  -1.90    -1.63
+    2                -0.70  -0.99    -0.69
+    3                +0.19  -0.05    +0.18
+    4                +0.71  +0.63    +0.80
+    5                +1.28  +1.23    +1.39
+    6                +1.07  +1.24    +1.19
+    7                +1.59  +1.65    +1.90
+     Boosted predictions only span 1.8 to 6.0. The darkest and brightest reports
+     are where the error lives; the models cannot tell an unusually good night is coming.
+  b) Errors of 2+ magnitudes are 14% of test reports but 34% of Boosted's total error.
+  c) Label noise sets a floor. On the 102 site-nights with 2+ test reports, reports for
+     the same place and night differ by 1.84 magnitudes on average (53% differ by 2+).
+     No model using site- or night-level features can separate those reports.
+  d) Worst Boosted errors (cloud = reanalysis mean cloud cover over the dark hours, %):
+    night_date          site_id  limiting_mag  Baseline  Ridge  Boosted  cloud  moon
+    2025-04-28   sommers_bausch          7.00      2.00   2.77     2.21  40.43  0.03
+    2024-04-25 boulder_downtown          7.00      3.00   2.80     2.34 100.00  0.95
+    2024-12-07   sommers_bausch          7.00      2.00   2.71     2.78   0.00  0.46
+    2023-02-18         longmont          7.00      4.00   3.57     2.92  65.40  0.02
+    2023-02-21 boulder_downtown          7.00      3.00   3.09     3.01  99.90  0.06
+    2025-04-23         longmont          7.00      4.00   3.94     3.04  82.14  0.17
+     These are magnitude 7 reports from bright city sites (Sommers-Bausch, Boulder, Longmont),
+     several under heavy reanalysis cloud. They look like observer or chart-matching errors,
+     or local clearing the hourly reanalysis grid misses, rather than something to learn.
+  e) Test MAE by year (Baseline / Ridge / Boosted): 2023 0.86 / 0.95 / 0.86; 2024 1.19 / 1.29 / 1.19; 2025 1.17 / 1.24 / 1.25
+     2024-2025 are harder for every model, including the baseline, so the drift is in the
+     reports themselves, not in one model.
+  f) Conditions (MAE Baseline / Ridge / Boosted):
+     reanalysis cloud > 50%: 1.10 / 1.17 / 1.12 (n=318); <= 50%: 1.01 / 1.10 / 1.05 (n=340)
+     smoke overhead (HMS > 0): 0.68 / 0.81 / 0.83 (n=34); none: 1.07 / 1.15 / 1.10 (n=624)
+     48% of test reports fall on nights the reanalysis calls mostly cloudy, a sign
+     the nightly averages do not capture what the observer saw. Smoke-day error is lower, but
+     34 reports is too few to read anything into it.
+
+3. Subgroups and fairness
+  The data describe places and nights, not people, and the output is a stargazing guide rather
+  than a consequential decision, so person-level fairness does not apply. Observer coordinates
+  were dropped (cleaning report 3.1). The relevant subgroup is the site:
+    Boosted vs baseline, by site (negative = model better): nederland -0.12, boulder_downtown -0.03, denver_downtown -0.01, sommers_bausch +0.04, flagstaff_mtn +0.05, ncar_mesa +0.05, crestone +0.08, gross_reservoir +0.13, longmont +0.18
+  Error is lowest at the darkest, most consistent site (Crestone) and at heavily lit Denver,
+  and highest at foothill and small-town sites with fewer reports (NCAR Mesa, Longmont,
+  Nederland, Flagstaff), where reports vary most.
+  Coverage is uneven: Sommers-Bausch, Boulder and Denver supply most reports, sites with under
+  5 training reports get the overall median, and Pawnee Buttes and RMNP have no test
+  reports at all. Results for small sites are not reliable.
+
+4. What this evaluation does not prove
+  - Not causal. Importance and coefficients describe what the models lean on in these reports.
+    Site and radiance also stand in for who observes where, so they are not pure light effects.
+  - Not evidence that weather or smoke do not matter. Clouds and smoke physically dim the sky;
+    here the signal is hidden by self-selection (people report on clear nights), reanalysis
+    cloud that misses local gaps, and noisy naked-eye labels. Q3 looks at this directly.
+  - Not a forecast test. 'Day-before' means the previous night's actual conditions; a real
+    weather forecast might do better, and was not available in this dataset.
+  - Not a new-site test. Every test site had training reports; in cross-validation, an unseen
+    site (Crestone in 2022) broke the baseline and the trees. Predictions for new places would
+    be much less accurate.
+  - Not a test of an average night. Reports exist only when someone went out, so results
+    describe nights people chose to observe, mostly Oct-May (only 59 test reports in Jun-Sep).
+  - Three test years from one region. The gap to the baseline could change with other years,
+    a different observer mix, or more smoke-heavy seasons.
