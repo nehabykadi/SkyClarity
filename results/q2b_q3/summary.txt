@@ -1,0 +1,33 @@
+Q2 PART B
+Reports used: 1877 across 7 sites; sites dropped (<5 reports in a season group): ['brainard_lake', 'estes_park', 'golden_gate_sp', 'jackson_lake_sp', 'lyons', 'ncar_mesa', 'nederland', 'pawnee_buttes', 'rmnp_alpine_vc']
+Pooled within-site difference (Jun-Sep minus rest): +0.400 mag, 95% bootstrap CI [+0.167, +0.645] (resampling nights, 2000 reps)
+
+            site  n_fire  n_rest  mean_fire  mean_rest   diff  ci_low  ci_high
+ gross_reservoir      15     134      3.667      4.507 -0.841  -1.368   -0.313
+boulder_downtown      10     336      2.900      2.812  0.087  -1.209    1.384
+        crestone      78     105      6.205      6.029  0.177  -0.020    0.373
+  sommers_bausch      16     547      2.750      2.468  0.282  -0.249    0.813
+ denver_downtown      65     256      3.169      2.641  0.529   0.235    0.822
+        longmont      51      95      4.490      3.600  0.890   0.509    1.272
+   flagstaff_mtn       8     161      5.375      3.832  1.543   0.983    2.102
+
+Q3
+n = 1950 reports (138 dropped for missing values), 602 nights, 14 sites. R^2 = 0.344
+Features: ['cloud_cover_mean', 'hms_smoke_level', 'log_pm25_ugm3', 'pm25_missing', 'moon_illum_frac', 'moon_up_frac'] (+ site fixed effects)
+Smoke-like columns: ['hms_smoke_level']
+
+            term   coef  ci_low  ci_high  coef_per_sd  ci_low_per_sd  ci_high_per_sd
+cloud_cover_mean -0.006  -0.008   -0.004       -0.192         -0.258          -0.126
+ hms_smoke_level  0.089  -0.073    0.296        0.028         -0.023           0.093
+   log_pm25_ugm3 -0.032  -0.171    0.093       -0.020         -0.107           0.058
+    pm25_missing -0.000  -0.000    0.000       -0.000         -0.000           0.000
+ moon_illum_frac -0.240  -1.146    0.588       -0.065         -0.310           0.159
+    moon_up_frac -0.050  -0.815    0.780       -0.015         -0.236           0.226
+
+Ordinal logistic check
+            term  log_odds  odds_ratio  ci_low  ci_high  same_sign_as_ols  n_boot_ok
+cloud_cover_mean    -0.009       0.991  -0.012   -0.006              True        300
+ hms_smoke_level     0.151       1.162  -0.118    0.439              True        300
+   log_pm25_ugm3    -0.052       0.949  -0.267    0.139              True        300
+ moon_illum_frac    -0.548       0.578  -1.914    0.402              True        300
+    moon_up_frac     0.035       1.036  -0.915    1.419             False        300
