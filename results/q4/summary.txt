@@ -1,0 +1,45 @@
+SkyClarity - Q4 results
+seed 5502, 2000 site-night bootstrap resamples, 30 permutation repeats
+
+Train 2018-2022: 1,430 reports; test 2023-2025: 658 reports
+Features (20): moon_illum_frac, moon_up_frac, moon_alt_max_deg, n_dark_hours, log_viirs_radiance, elevation_m, month_sin, month_cos, prev_cloud_cover_mean, prev_cloud_low_mean, prev_cloud_mid_mean, prev_cloud_high_mean, prev_rel_humidity_mean, prev_dew_point_c_mean, prev_precip_mm_sum, prev_wind_speed_ms_mean, prev_log_pm25_ugm3, prev_pm25_missing, prev_hms_smoke_level, site_id
+
+Chosen settings (leave-one-year-out CV on the training years)
+  Ridge:   alpha = 10
+  Boosted: l2_regularization = 1.0, learning_rate = 0.1, loss = absolute_error, max_iter = 300, max_leaf_nodes = 7, min_samples_leaf = 10
+
+Cross-validated MAE (mean and sd over the 5 held-out years)
+             mean    std
+  model                 
+  Baseline  0.982  0.092
+  Ridge     0.986  0.055
+  Boosted   0.978  0.100
+
+Test MAE, 2023-2025 (scored once)
+  Baseline MAE 1.053, within 1 magnitude 75.1%
+  Ridge    MAE 1.133, within 1 magnitude 49.2%, gain over baseline -0.080 (95% CI -0.123 to -0.039)
+  Boosted  MAE 1.084, within 1 magnitude 52.4%, gain over baseline -0.031 (95% CI -0.063 to +0.001)
+
+Test MAE by group
+  grouping            group   n  Baseline  Ridge  Boosted
+      site   sommers_bausch 197      0.92   1.02     0.96
+      site boulder_downtown 130      1.25   1.26     1.23
+      site         crestone  76      0.50   0.73     0.58
+      site  denver_downtown  64      0.89   0.91     0.88
+      site    flagstaff_mtn  59      1.29   1.40     1.33
+      site  gross_reservoir  37      1.22   1.47     1.35
+      site         longmont  34      1.41   1.42     1.59
+      site        nederland  22      1.36   1.36     1.25
+      site        ncar_mesa  18      1.67   1.68     1.72
+    season          Jun-Sep  59      0.92   0.96     1.01
+    season          Oct-May 599      1.07   1.15     1.09
+      moon         moonless 486      1.11   1.18     1.14
+      moon          moonlit 172      0.88   1.00     0.92
+
+Most important features (permutation, test set): Ridge: site_id, log_viirs_radiance, prev_pm25_missing, prev_dew_point_c_mean; Boosted: site_id, log_viirs_radiance, prev_log_pm25_ugm3, moon_illum_frac
+
+Caveats: 'within 1 magnitude' favours the baseline, whose whole-number predictions match the
+whole-number target exactly or by 1, while the models predict in between; compare MAE first.
+'Day-before information' is the previous night's actual conditions, not a forecast;
+Pawnee Buttes and RMNP have no test reports and several sites have fewer than 10;
+only 34 test reports fall on smoke days.

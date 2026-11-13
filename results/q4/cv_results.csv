@@ -1,0 +1,16 @@
+model,held_out_year,n_scored,mae
+Ridge,2018,428,1.0712
+Ridge,2019,250,0.9973
+Ridge,2020,259,0.9852
+Ridge,2021,285,0.9399
+Ridge,2022,98,0.9359
+Boosted,2018,428,1.1403
+Boosted,2019,250,0.9879
+Boosted,2020,259,0.9606
+Boosted,2021,285,0.9268
+Boosted,2022,98,0.8746
+Baseline,2018,428,1.1121
+Baseline,2019,250,0.9040
+Baseline,2020,259,1.0463
+Baseline,2021,285,0.9298
+Baseline,2022,98,0.9184
