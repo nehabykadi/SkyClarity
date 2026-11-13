@@ -111,7 +111,13 @@ feats = [f for f in Q3_FEATURES if f != SITE_COL]
 missing = [f for f in feats if f not in df.columns]
 if missing:
     raise KeyError(f"Q3 features missing from reports: {missing}")
-d3 = df.dropna(subset=feats + [TARGET]).copy()
+# PM2.5 is blank where the nearest monitor is too far away (cleaning report). Dropping those rows
+# would remove 128 of Crestone's 202 reports, so fill them with the median of the observed values
+# and keep pm25_missing as an indicator: its coefficient absorbs any difference for those rows.
+d3 = df.copy()
+if "log_pm25_ugm3" in feats:
+    d3["log_pm25_ugm3"] = d3["log_pm25_ugm3"].fillna(d3["log_pm25_ugm3"].median())
+d3 = d3.dropna(subset=feats + [TARGET])
 n_dropped = len(df) - len(d3)
 
 X_num = pd.get_dummies(d3[feats], drop_first=True, dtype=float)
@@ -207,7 +213,7 @@ try:
         k = list(Xo.columns).index(c)
         l, h = np.percentile(ob[:, k], [2.5, 97.5])
         rows.append(dict(term=c, log_odds=beta0[k], odds_ratio=np.exp(beta0[k]),
-                         ci_low=l, ci_high=h,
+                         ci_low_log_odds=l, ci_high_log_odds=h,
                          same_sign_as_ols=bool(np.sign(beta0[k]) == np.sign(q3_ols.set_index("term").loc[c, "coef"])),
                          n_boot_ok=len(ob)))
     q3_ord = pd.DataFrame(rows)
@@ -225,7 +231,7 @@ ax.errorbar(q3_ols["coef_per_sd"], y,
                   q3_ols["ci_high_per_sd"] - q3_ols["coef_per_sd"]], fmt="o", capsize=3)
 ax.axvline(0, color="grey", lw=1)
 ax.set_yticks(y); ax.set_yticklabels(q3_ols["term"])
-ax.set_xlabel("Change in limiting magnitude per 1 SD (site fixed effects, 95% bootstrap CI)")
+ax.set_xlabel("Change in limiting magnitude per 1 SD\n(site fixed effects, 95% bootstrap CI)")
 plt.tight_layout(); plt.savefig(f"{OUT}/q3_coefplot.png", dpi=150); plt.close()
 
 # ---------------- summary ----------------
